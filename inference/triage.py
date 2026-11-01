@@ -44,7 +44,8 @@ def triage_image(args):
             data = data.to(device)
             
             # Forward pass
-            vq_loss, data_recon, _ = model(data)
+            # BUGFIX: forward() returns (x_recon, vq_loss, perplexity)
+            data_recon, vq_loss, _ = model(data)
             
             # Calculate per-sample reconstruction error
             # Shape: (B, C, H, W) -> (B,)

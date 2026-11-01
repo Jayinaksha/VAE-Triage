@@ -1,0 +1,441 @@
+{
+  "results": [
+    {
+      "method": "Tissue fraction (Otsu-like)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.6093663963401954,
+      "auprc": 0.6896555422862471,
+      "auroc_ci95": [
+        0.591789618739251,
+        0.6284111597580688
+      ],
+      "precision": 0.8333333333333334,
+      "recall": 0.3476190476190476,
+      "f1": 0.4905913978494624,
+      "specificity": 0.9362445414847161,
+      "accuracy": 0.6546697038724374,
+      "per_kind_recall": {
+        "background": 0.9966666666666667,
+        "bubble": 0.013333333333333334,
+        "dark_exposure": 0.0,
+        "gaussian_blur": 0.06,
+        "jpeg": 0.24666666666666667,
+        "motion_blur": 0.07333333333333333,
+        "partial_blur": 0.08,
+        "pen_mark": 0.02,
+        "sensor_noise": 0.0,
+        "tissue_fold": 0.006666666666666667,
+        "washout": 0.38
+      },
+      "reject_rate_clean_normal": 0.08,
+      "reject_rate_clean_tumor": 0.004081632653061225,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "Laplacian variance (focus)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.7587470368059888,
+      "auprc": 0.7938860974223348,
+      "auroc_ci95": [
+        0.7457378553097304,
+        0.7749093269347364
+      ],
+      "precision": 0.8743211792086889,
+      "recall": 0.5366666666666666,
+      "f1": 0.6650929477722042,
+      "specificity": 0.9292576419213974,
+      "accuracy": 0.7414578587699316,
+      "per_kind_recall": {
+        "background": 0.9966666666666667,
+        "bubble": 0.13333333333333333,
+        "dark_exposure": 0.08,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.15333333333333332,
+        "motion_blur": 0.9533333333333334,
+        "partial_blur": 0.32666666666666666,
+        "pen_mark": 0.06666666666666667,
+        "sensor_noise": 0.0,
+        "tissue_fold": 0.04666666666666667,
+        "washout": 0.7666666666666667
+      },
+      "reject_rate_clean_normal": 0.08888888888888889,
+      "reject_rate_clean_tumor": 0.004081632653061225,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "Tenengrad (Sobel energy)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.7640312954876274,
+      "auprc": 0.7918017154425498,
+      "auroc_ci95": [
+        0.7512215195922565,
+        0.7802485741000507
+      ],
+      "precision": 0.8466557911908646,
+      "recall": 0.4942857142857143,
+      "f1": 0.6241731809981961,
+      "specificity": 0.9179039301310044,
+      "accuracy": 0.715261958997722,
+      "per_kind_recall": {
+        "background": 0.995,
+        "bubble": 0.02,
+        "dark_exposure": 0.1,
+        "gaussian_blur": 0.82,
+        "jpeg": 0.13333333333333333,
+        "motion_blur": 0.64,
+        "partial_blur": 0.29333333333333333,
+        "pen_mark": 0.07333333333333333,
+        "sensor_noise": 0.006666666666666667,
+        "tissue_fold": 0.05333333333333334,
+        "washout": 0.8
+      },
+      "reject_rate_clean_normal": 0.10333333333333333,
+      "reject_rate_clean_tumor": 0.004081632653061225,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "HistoQC-style rule set",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.8568583905177792,
+      "auprc": 0.861252634240599,
+      "auroc_ci95": [
+        0.8448386752562786,
+        0.8672437368684673
+      ],
+      "precision": 0.9364773820981713,
+      "recall": 0.4633333333333333,
+      "f1": 0.619942656897101,
+      "specificity": 0.97117903930131,
+      "accuracy": 0.7282460136674259,
+      "per_kind_recall": {
+        "background": 0.9883333333333333,
+        "bubble": 0.08,
+        "dark_exposure": 0.06666666666666667,
+        "gaussian_blur": 0.98,
+        "jpeg": 0.04,
+        "motion_blur": 0.5066666666666667,
+        "partial_blur": 0.04,
+        "pen_mark": 0.10666666666666667,
+        "sensor_noise": 0.28,
+        "tissue_fold": 0.10666666666666667,
+        "washout": 0.32666666666666666
+      },
+      "reject_rate_clean_normal": 0.035555555555555556,
+      "reject_rate_clean_tumor": 0.004081632653061225,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "Single Gaussian (Mahalanobis, K=1)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9542624246205033,
+      "auprc": 0.9432386618807521,
+      "auroc_ci95": [
+        0.9471531171446986,
+        0.9605302008900596
+      ],
+      "precision": 0.9234189723320159,
+      "recall": 0.89,
+      "f1": 0.9064015518913676,
+      "specificity": 0.9323144104803494,
+      "accuracy": 0.9120728929384966,
+      "per_kind_recall": {
+        "background": 0.99,
+        "bubble": 0.6133333333333333,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.96,
+        "motion_blur": 0.9533333333333334,
+        "partial_blur": 0.5733333333333334,
+        "pen_mark": 0.8333333333333334,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.9133333333333333,
+        "washout": 0.6533333333333333
+      },
+      "reject_rate_clean_normal": 0.08444444444444445,
+      "reject_rate_clean_tumor": 0.006122448979591836,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "GMM (K=4) same-slide calibration [pitfall]",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9420833853191932,
+      "auprc": 0.9362166214849028,
+      "auroc_ci95": [
+        0.9340700217522326,
+        0.949722381049165
+      ],
+      "precision": 0.7354028085735402,
+      "recall": 0.9476190476190476,
+      "f1": 0.8281315022888056,
+      "specificity": 0.6873362445414847,
+      "accuracy": 0.8118451025056947,
+      "per_kind_recall": {
+        "background": 0.9916666666666667,
+        "bubble": 0.9533333333333334,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 1.0,
+        "motion_blur": 0.9933333333333333,
+        "partial_blur": 0.72,
+        "pen_mark": 0.9,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.9933333333333333,
+        "washout": 0.74
+      },
+      "reject_rate_clean_normal": 0.28055555555555556,
+      "reject_rate_clean_tumor": 0.4306122448979592,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "GMM (K=6, BIC) LOSO calibration [ours]",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9389482220835932,
+      "auprc": 0.9332419288240295,
+      "auroc_ci95": [
+        0.9306347166512946,
+        0.9467509858642111
+      ],
+      "precision": 0.8940334128878281,
+      "recall": 0.8919047619047619,
+      "f1": 0.8929678188319428,
+      "specificity": 0.903056768558952,
+      "accuracy": 0.8977220956719818,
+      "per_kind_recall": {
+        "background": 0.98,
+        "bubble": 0.7333333333333333,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.9933333333333333,
+        "motion_blur": 0.8866666666666667,
+        "partial_blur": 0.5533333333333333,
+        "pen_mark": 0.8466666666666667,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.9666666666666667,
+        "washout": 0.5866666666666667
+      },
+      "reject_rate_clean_normal": 0.10055555555555555,
+      "reject_rate_clean_tumor": 0.0836734693877551,
+      "latency_ms_per_tile_model_only": 0.009294659863332272
+    },
+    {
+      "method": "GMM (K=6, slide-CV) LOSO calibration [ours, final]",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9389482220835932,
+      "auprc": 0.9332419288240295,
+      "auroc_ci95": [
+        0.9306347166512946,
+        0.9467509858642111
+      ],
+      "precision": 0.9181636726546906,
+      "recall": 0.8761904761904762,
+      "f1": 0.8966861598440545,
+      "specificity": 0.9283842794759826,
+      "accuracy": 0.9034168564920273,
+      "per_kind_recall": {
+        "background": 0.98,
+        "bubble": 0.64,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.9866666666666667,
+        "motion_blur": 0.8533333333333334,
+        "partial_blur": 0.5333333333333333,
+        "pen_mark": 0.8466666666666667,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.94,
+        "washout": 0.5466666666666666
+      },
+      "reject_rate_clean_normal": 0.08166666666666667,
+      "reject_rate_clean_tumor": 0.03469387755102041,
+      "latency_ms_per_tile_model_only": 0.009294659863332272
+    },
+    {
+      "method": "GMM on QC-only feature subset [ours, tumour-safe]",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9365048866708257,
+      "auprc": 0.92800383209708,
+      "auroc_ci95": [
+        0.9282150851039843,
+        0.9435435011571444
+      ],
+      "precision": 0.9444791016843419,
+      "recall": 0.7209523809523809,
+      "f1": 0.8177153659195248,
+      "specificity": 0.9611353711790394,
+      "accuracy": 0.8462414578587699,
+      "per_kind_recall": {
+        "background": 0.935,
+        "bubble": 0.07333333333333333,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 0.9933333333333333,
+        "jpeg": 0.47333333333333333,
+        "motion_blur": 0.6066666666666667,
+        "partial_blur": 0.18,
+        "pen_mark": 0.7733333333333333,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.92,
+        "washout": 0.3333333333333333
+      },
+      "reject_rate_clean_normal": 0.04888888888888889,
+      "reject_rate_clean_tumor": 0.0020408163265306124,
+      "latency_ms_per_tile_model_only": 0.009294659863332272
+    },
+    {
+      "method": "Isolation Forest",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9126999376169682,
+      "auprc": 0.8762079897895063,
+      "auroc_ci95": [
+        0.9038939645394953,
+        0.9215903632329446
+      ],
+      "precision": 0.8988206083178151,
+      "recall": 0.6895238095238095,
+      "f1": 0.7803826461870116,
+      "specificity": 0.9288209606986899,
+      "accuracy": 0.8143507972665148,
+      "per_kind_recall": {
+        "background": 0.9883333333333333,
+        "bubble": 0.12666666666666668,
+        "dark_exposure": 0.9933333333333333,
+        "gaussian_blur": 0.98,
+        "jpeg": 0.26666666666666666,
+        "motion_blur": 0.92,
+        "partial_blur": 0.20666666666666667,
+        "pen_mark": 0.49333333333333335,
+        "sensor_noise": 0.86,
+        "tissue_fold": 0.6133333333333333,
+        "washout": 0.24
+      },
+      "reject_rate_clean_normal": 0.08944444444444444,
+      "reject_rate_clean_tumor": 0.004081632653061225,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "One-class SVM (RBF)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9046432730297359,
+      "auprc": 0.9039323503690306,
+      "auroc_ci95": [
+        0.8953847168233651,
+        0.9148744798641842
+      ],
+      "precision": 0.9381793478260869,
+      "recall": 0.6576190476190477,
+      "f1": 0.7732362821948489,
+      "specificity": 0.9602620087336244,
+      "accuracy": 0.8154897494305239,
+      "per_kind_recall": {
+        "background": 0.9433333333333334,
+        "bubble": 0.04,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.20666666666666667,
+        "motion_blur": 0.52,
+        "partial_blur": 0.04666666666666667,
+        "pen_mark": 0.7733333333333333,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.8133333333333334,
+        "washout": 0.03333333333333333
+      },
+      "reject_rate_clean_normal": 0.04888888888888889,
+      "reject_rate_clean_tumor": 0.006122448979591836,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "Logistic regression (supervised)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9664593470576002,
+      "auprc": 0.9486489286941043,
+      "auroc_ci95": [
+        0.9608750341437029,
+        0.971650535497402
+      ],
+      "precision": 0.9249406175771971,
+      "recall": 0.9271428571428572,
+      "f1": 0.9260404280618312,
+      "specificity": 0.9310043668122271,
+      "accuracy": 0.9291571753986333,
+      "per_kind_recall": {
+        "background": 0.9916666666666667,
+        "bubble": 0.86,
+        "dark_exposure": 0.9866666666666667,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.9666666666666667,
+        "motion_blur": 0.9733333333333334,
+        "partial_blur": 0.72,
+        "pen_mark": 0.76,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.9466666666666667,
+        "washout": 0.8
+      },
+      "reject_rate_clean_normal": 0.08666666666666667,
+      "reject_rate_clean_tumor": 0.004081632653061225,
+      "latency_ms_per_tile_model_only": null
+    },
+    {
+      "method": "Random forest (supervised)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9601289249324183,
+      "auprc": 0.9553501410875467,
+      "auroc_ci95": [
+        0.9544549042561483,
+        0.9656455896325719
+      ],
+      "precision": 0.8629531388152077,
+      "recall": 0.9295238095238095,
+      "f1": 0.8950022925263641,
+      "specificity": 0.8646288209606987,
+      "accuracy": 0.8956719817767653,
+      "per_kind_recall": {
+        "background": 0.9983333333333333,
+        "bubble": 0.66,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 0.9466666666666667,
+        "motion_blur": 1.0,
+        "partial_blur": 0.6333333333333333,
+        "pen_mark": 0.8533333333333334,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.98,
+        "washout": 0.9466666666666667
+      },
+      "reject_rate_clean_normal": 0.16666666666666666,
+      "reject_rate_clean_tumor": 0.02040816326530612,
+      "latency_ms_per_tile_model_only": null
+    }
+  ],
+  "bic": {
+    "1": -43292.090393854385,
+    "2": -69514.63348263565,
+    "3": -84092.56016270553,
+    "4": -86601.40956019184,
+    "6": -90705.89915574445,
+    "8": -88461.51409629856
+  },
+  "heldout_ll": {
+    "1": -5.459676272313296,
+    "2": -3.105781929017707,
+    "3": 5.511989168051119,
+    "4": 4.593790983616553,
+    "6": 6.687659298855547,
+    "8": -0.6504161578192544
+  },
+  "k_slide_cv": 6,
+  "k": 6,
+  "threshold": 12.656111139067422,
+  "gmm_param_count": 1799,
+  "gmm_json_bytes": 45909
+}

@@ -28,13 +28,15 @@ def train(args):
 
     transform = get_train_transforms(args.tile_size)
     dataset = GigapixelTileDataset(image_path, tile_size=args.tile_size, stride=args.tile_size, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=device.type == "cuda")
 
     model = VQVAE(num_hiddens=128, num_residual_hiddens=32, num_residual_layers=2,
                   embedding_dim=64, num_embeddings=512, commitment_cost=0.25).to(device)
     
     optimizer = optim.Adam(model.parameters(), lr=args.lr, amsgrad=False)
-    scaler = torch.cuda.amp.GradScaler()
+    # AMP only makes sense on CUDA; on CPU GradScaler is a no-op that warns.
+    use_amp = device.type == "cuda"
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
     os.makedirs(args.save_dir, exist_ok=True)
     
@@ -48,8 +50,11 @@ def train(args):
             data = data.to(device)
             optimizer.zero_grad()
             
-            with torch.cuda.amp.autocast():
-                vq_loss, data_recon, perplexity = model(data)
+            with torch.autocast(device_type=device.type, enabled=use_amp):
+                # BUGFIX: VQVAE.forward returns (x_recon, vq_loss, perplexity).
+                # The original code unpacked (vq_loss, data_recon, ...) - the
+                # loss became a (B,3,H,W) tensor and .backward() crashed.
+                data_recon, vq_loss, perplexity = model(data)
                 recon_error = F.mse_loss(data_recon, data)
                 loss = recon_error + vq_loss
                 
