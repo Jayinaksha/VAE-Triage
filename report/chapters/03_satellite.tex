@@ -75,6 +75,9 @@ architecture reaches 58--61 mIoU; with GPU training and a pretrained encoder the
 \paragraph{Instance segmentation with YOLOv8n-seg (cars).} Car instances were derived from the semantic ground truth
 (connected components $\to$ polygons) and a COCO-pretrained YOLOv8n-seg was fine-tuned on CPU for 20 minutes.
 \IfFileExists{generated/tab_yolo.tex}{\input{generated/tab_yolo}}{}
+Result: on 429 training patches (1{,}488 car instances), \textbf{mask mAP50 0.85} (mAP50-95 0.53) on validation and
+\textbf{car pixel IoU 84.7\%} on the shared test crops -- far above the semantic U-Net's car IoU (61\%) after a similar CPU budget,
+because a COCO-pretrained detector already knows ``car''. Transfer learning matters more than architecture at small budgets.
 YOLO answers ``how many and where'' (countable objects: cars here, mitoses and nuclei in pathology); the U-Net answers ``which class is every
 pixel''. YOLO11 replaces C2f with C3k2 blocks and adds C2PSA attention for higher mAP at fewer parameters; the training recipe is identical.
 

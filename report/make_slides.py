@@ -173,6 +173,7 @@ image(s, "chart_potsdam.png", x=0.4, y=1.45, h=5.8)
 bullets(s, ["k-means 19.8 → GMM-Bayes 43.1 → + smoothing 48.5",
             "Random forest 47.1 → + NIR/NDVI 50.4",
             "Repo U-Net, 30 min CPU: 58.2 → 61.3 with 8× TTA",
+            "YOLOv8n-seg cars (20 min CPU): car IoU 84.7 (U-Net 61, RF 46), mask mAP50 0.85",
             "Deep SOTA 86.5–87.5: shape & context need a CNN/transformer",
             "→ GMMs for colour/density problems, U-Net for semantics"], x=7.6, y=1.8, w=5.5, size=15)
 

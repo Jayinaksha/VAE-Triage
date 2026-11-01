@@ -91,6 +91,7 @@ title: |
   - [VAE-Triage experiments](#vae-triage-experiments)
   - [Satellite experiments](#satellite-experiments)
   - [Using the edge scorer](#using-the-edge-scorer)
+  - [Videos and website](#videos-and-website)
 
 # Executive summary (read this first)
 
@@ -131,18 +132,19 @@ Data: 7 real CAMELYON16 breast lymph-node WSIs (4.5 GB, 203,168 tiles at
 20$\times$), expert tumour masks; ISPRS Potsdam RGB+NIR, 6 training
 tiles + 3 official test tiles. CPU only (4 vCPU), no GPU.
 
-| **Task**                                                 | **Best classical / ours**                                              | **Reference points**                                                                       |
-|:---------------------------------------------------------|:-----------------------------------------------------------------------|:-------------------------------------------------------------------------------------------|
-| Stage 0: tissue vs glass (Dice)                          | **GMM K=2 on (S, OD): 0.839**                                          | Otsu 0.52–0.55; fixed thr. 0.74; k-means 0.14                                              |
-| Compute removed before any NN                            | **69.6% of 203k tiles are glass**                                      | 30–78% per slide                                                                           |
-| Stage 1: tile QC (AUROC / F1)                            | **GMM 0.939 / 0.897**, single Gaussian 0.954 / 0.906                   | Laplacian 0.76; HistoQC-style rules 0.86; IsolationForest 0.91; supervised LR/RF 0.96–0.97 |
-| Tumour wrongly rejected by QC                            | **3.5%** with slide-level calibration                                  | 43% with naive same-slide calibration (a trap!)                                            |
-| Original VQ-VAE MSE as QC score                          | AUROC **0.376** (worse than chance)                                    | blur/glass reconstruct *better* than tissue                                                |
-| Supervised MobileNetV3 QC                                | AUROC 0.976, 0.6 ms/tile (ORT)                                         | but recall 7–64% on artefact types not in training; GMM 64–99%                             |
-| QC model size / cost                                     | **45 KB JSON, 1,799 numbers, 0.01 ms/tile** + 2.1 ms features (128 px) | VQ-VAE 0.69 M params, 22.9 ms/tile ORT                                                     |
-| Tumour vs normal, no tumour labels                       | GMM novelty 0.740; VQ-VAE 0.749                                        | Lit. plain AE 0.66, L1-AE 0.21, perceptual AE 0.93                                         |
-| Tumour via GMM tissue components (fluid, nuclei, stroma) | **0.931** (5 numbers per tile + LR)                                    | supervised RF on 23 features 0.945                                                         |
-| Potsdam segmentation, classical (mIoU, 5 cls)            | GMM-Bayes + smoothing **45.9**; RF+NIR 48.4                            | k-means 15.7; lit. deep SOTA 86.5–87.5                                                     |
+| **Task**                                                 | **Best classical / ours**                                                                         | **Reference points**                                                                       |
+|:---------------------------------------------------------|:--------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------|
+| Stage 0: tissue vs glass (Dice)                          | **GMM K=2 on (S, OD): 0.839**                                                                     | Otsu 0.52–0.55; fixed thr. 0.74; k-means 0.14                                              |
+| Compute removed before any NN                            | **69.6% of 203k tiles are glass**                                                                 | 30–78% per slide                                                                           |
+| Stage 1: tile QC (AUROC / F1)                            | **GMM 0.939 / 0.897**, single Gaussian 0.954 / 0.906                                              | Laplacian 0.76; HistoQC-style rules 0.86; IsolationForest 0.91; supervised LR/RF 0.96–0.97 |
+| Tumour wrongly rejected by QC                            | **3.5%** with slide-level calibration                                                             | 43% with naive same-slide calibration (a trap!)                                            |
+| Original VQ-VAE MSE as QC score                          | AUROC **0.376** (worse than chance)                                                               | blur/glass reconstruct *better* than tissue                                                |
+| Supervised MobileNetV3 QC                                | AUROC 0.976, 0.6 ms/tile (ORT)                                                                    | but recall 7–64% on artefact types not in training; GMM 64–99%                             |
+| QC model size / cost                                     | **45 KB JSON, 1,799 numbers, 0.01 ms/tile** + 2.1 ms features (128 px)                            | VQ-VAE 0.69 M params, 22.9 ms/tile ORT                                                     |
+| Tumour vs normal, no tumour labels                       | GMM novelty 0.740; VQ-VAE 0.749                                                                   | Lit. plain AE 0.66, L1-AE 0.21, perceptual AE 0.93                                         |
+| Tumour via GMM tissue components (fluid, nuclei, stroma) | **0.931** (5 numbers per tile + LR)                                                               | supervised RF on 23 features 0.945                                                         |
+| Potsdam segmentation (mIoU, 5 cls)                       | repo U-Net, 30 min CPU: **58.2** (8$\times$TTA **61.3**); GMM-Bayes + smoothing 48.5; RF+NIR 50.4 | k-means 19.8; lit. deep SOTA (GPU) 86.5–87.5                                               |
+| Car instance segmentation (Potsdam)                      | YOLOv8n-seg, 20 min CPU: **car IoU 84.7**, mask mAP50 0.85                                        | U-Net car IoU 61; RF 46                                                                    |
 
 Summary. Deep-learning rows and the time-boxed U-Net / YOLO runs are in
 the chapters and in the auto-generated tables.
@@ -1139,11 +1141,14 @@ as in the literature), OA.
 
 | Method | mIoU5 | mF1-5 | OA | Imp. | Bldg | LowVeg | Tree | Car |
 |---|---|---|---|---|---|---|---|---|
-| K-means (k=6, unsupervised, Hungarian-mapped) | 15.7 | 25.9 | 31.9 | 25.1 | 16.6 | 25.8 | 0.6 | 10.4 |
-| GMM-Bayes (4 comps/class) | 40.5 | 57.5 | 56.6 | 47.5 | 44.0 | 43.4 | 34.2 | 33.6 |
-| GMM-Bayes + posterior smoothing | 45.9 | 62.7 | 61.7 | 51.2 | 48.3 | 49.6 | 40.9 | 39.3 |
-| Random Forest (RGB features) | 45.7 | 62.5 | 60.7 | 54.0 | 47.3 | 46.8 | 37.7 | 42.6 |
-| Random Forest (RGB + NIR/NDVI) | 48.4 | 64.9 | 64.0 | 60.7 | 50.9 | 48.6 | 41.0 | 40.8 |
+| K-means (k=6, unsupervised, Hungarian-mapped) | 19.8 | 32.5 | 36.1 | 24.8 | 10.9 | 25.6 | 25.0 | 12.6 |
+| GMM-Bayes (4 comps/class) | 43.1 | 60.0 | 60.0 | 51.6 | 41.7 | 46.6 | 38.7 | 36.8 |
+| GMM-Bayes + posterior smoothing | 48.5 | 65.2 | 64.8 | 55.1 | 45.2 | 52.1 | 45.7 | 44.5 |
+| Random Forest (RGB features) | 47.1 | 63.9 | 62.2 | 54.5 | 46.6 | 46.6 | 40.9 | 46.7 |
+| Random Forest (RGB + NIR/NDVI) | 50.4 | 66.8 | 65.9 | 62.2 | 51.9 | 48.1 | 44.0 | 45.9 |
+| Residual U-Net (repo), no TTA (30 min CPU) | 58.2 | 73.4 | 72.7 | 62.9 | 57.5 | 61.3 | 48.4 | 61.0 |
+| Residual U-Net (repo), 50% overlap stitching (30 min CPU) | 60.0 | 74.8 | 73.5 | 63.2 | 57.9 | 62.9 | 49.8 | 66.3 |
+| Residual U-Net (repo), 8x TTA (30 min CPU) | 61.3 | 75.8 | 74.2 | 64.4 | 60.2 | 63.0 | 49.7 | 69.0 |
 | Lit: ERFNet (UNetFormer T9) | 76.2 | -- | -- | -- | -- | -- | -- | -- |
 | Lit: BiSeNet R18 | 81.7 | -- | -- | -- | -- | -- | -- | -- |
 | Lit: DANet R18 | 80.3 | -- | -- | -- | -- | -- | -- | -- |
@@ -1161,17 +1166,17 @@ trained in minutes on CPU; orange: published deep models.</figcaption>
 
 ##### Classical baselines – what they teach.
 
-- **k-means (15.7 mIoU)**: colour clusters are not semantic classes
+- **k-means (19.8 mIoU)**: colour clusters are not semantic classes
   (grey roofs = grey roads).
 
-- **GMM-Bayes (40.5)**: one 4-component GMM per class, Bayes rule with
+- **GMM-Bayes (43.1)**: one 4-component GMM per class, Bayes rule with
   class priors – a generative classifier.
 
-- **+ posterior smoothing (45.9)**: blurring the class posteriors (a
+- **+ posterior smoothing (48.5)**: blurring the class posteriors (a
   cheap Markov-random-field/CRF surrogate) adds 5.4 points: spatial
   context matters.
 
-- **Random forest (45.7) and RF + NIR/NDVI (48.4)**: the near-infrared
+- **Random forest (47.1) and RF + NIR/NDVI (50.4)**: the near-infrared
   band adds physics (chlorophyll reflects NIR) and +2.7 points, mostly
   on impervious surfaces and buildings.
 
@@ -1182,13 +1187,37 @@ trained in minutes on CPU; orange: published deep models.</figcaption>
 
 ##### Deep model (repo U-Net).
 
-A time-boxed CPU training run of the repository’s own model (filters=16)
-is scheduled after this report; its numbers are added to
-Table <a href="#tab:potsdam" data-reference-type="ref"
-data-reference="tab:potsdam">[tab:potsdam]</a> automatically by
-`report/make_assets.py`. Expected order of magnitude from the literature
-for a ResNet-18 U-Net baseline with GPU training: 82.5 mIoU (UNetFormer
-ablation, Table 1 of Wang et al. 2022).
+The repository’s own model (`filters=16`, 4.1 M parameters, serial
+dilated bottleneck, concatenation skips) was trained for only **30
+minutes on 4 CPU cores** (1,750 iterations of batch 8 = 14,000 random
+256$^2$ crops, roughly 3.5 passes over the 6 training tiles; Adam with
+warm-up + cosine decay; D4 and brightness/contrast augmentation;
+cross-entropy with eroded-boundary pixels ignored). Results on the
+shared test crops: **58.2 mIoU** without TTA, **60.0** with 50% overlap
+stitching and **61.3** with 8$\times$ $D_4$ TTA (+3.1 points), already
+8–11 points above every classical method, with car IoU 61% (vs 46% for
+the random forest). Full 6000$\times$<!-- -->6000 tile inference took
+32 s on CPU. The gap to the literature (86–88) is training budget
+(minutes on CPU vs 100 GPU epochs on 23 tiles), no pretrained encoder
+and smaller crops – not the stitching. **This is the honest number to
+quote:** “a 30-minute CPU run of my architecture reaches 58–61 mIoU;
+with GPU training and a pretrained encoder the literature baseline of
+the same family is 82.5”.
+
+##### Instance segmentation with YOLOv8n-seg (cars).
+
+Car instances were derived from the semantic ground truth (connected
+components $\to$ polygons) and a COCO-pretrained YOLOv8n-seg was
+fine-tuned on CPU for 20 minutes. Result: on 429 training patches (1,488
+car instances), **mask mAP50 0.85** (mAP50-95 0.53) on validation and
+**car pixel IoU 84.7%** on the shared test crops – far above the
+semantic U-Net’s car IoU (61%) after a similar CPU budget, because a
+COCO-pretrained detector already knows “car”. Transfer learning matters
+more than architecture at small budgets. YOLO answers “how many and
+where” (countable objects: cars here, mitoses and nuclei in pathology);
+the U-Net answers “which class is every pixel”. YOLO11 replaces C2f with
+C3k2 blocks and adds C2PSA attention for higher mAP at fewer parameters;
+the training recipe is identical.
 
 ## Transfer to pathology segmentation
 
@@ -1491,9 +1520,9 @@ annotated artefact set from the lab’s own scanners.
 
 - DO mention the bugs you found and fixed – it shows ownership.
 
-- DON’T claim SOTA. Classical Potsdam mIoU is 46–48 vs 87 for deep SOTA;
-  that is the point: GMMs for colour/density problems, CNNs for
-  shape/semantics.
+- DON’T claim SOTA. Classical Potsdam mIoU is 43–50, our 30-min CPU
+  U-Net 58–61, deep SOTA 87; that is the point: GMMs for colour/density
+  problems, CNNs for shape/semantics.
 
 - DON’T call concatenation a residual connection, or say scatter_nd if
   the code loops.
@@ -1550,3 +1579,9 @@ scorer = EdgeGMMScorer("results/gmm_qc_model_final.json")   # 45 KB
 x = tile_features(rgb_tile)[None]          # (1, 23)
 reject = scorer.reject(x)[0]               # bool;  scorer.score(x) = -log p(x)
 ```
+
+## Videos and website
+
+    python report/make_videos.py   # explainer MP4s; uses Gemini TTS if GEMINI_API_KEY is set, else espeak-ng
+    python report/make_site.py     # static site -> docs/index.html (+ docs/assets), in both repos
+    # GitHub: Settings -> Pages -> Deploy from a branch -> <branch> -> /docs
