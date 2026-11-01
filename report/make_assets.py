@@ -324,3 +324,36 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def update_sat_readme():
+    """Fill the results table between markers in the satellite README."""
+    cs = load(f"{SAT}/results/classical_seg.json")
+    un = load(f"{SAT}/results/unet_f16.json")
+    yo = load(f"{SAT}/results/yolo_car.json")
+    rows = ["| Method | mIoU (5 cls) | mF1 | OA | Imp. | Bldg | LowVeg | Tree | Car |", "|---|---|---|---|---|---|---|---|---|"]
+    def row(r, name=None):
+        iou = list(r["per_class_iou"].values())
+        return (f"| {name or r['method']} | **{100 * r['mIoU_5_no_clutter']:.1f}** | {100 * r['mF1_5_no_clutter']:.1f} | "
+                f"{100 * r['OA']:.1f} | " + " | ".join(f"{100 * v:.1f}" for v in iou[:5]) + " |")
+    for r in (cs["results"] if cs else []):
+        rows.append(row(r))
+    if un:
+        for k in ["no_tta", "overlap50", "tta8"]:
+            if k in un:
+                rows.append(row(un[k], f"{un[k]['method']} — {un['minutes']:.0f} min CPU, {un['iterations']} it"))
+    if yo:
+        rows.append(f"| YOLOv8n-seg (cars only, {yo['train_minutes']:.0f} min CPU) | – | – | – | – | – | – | – | "
+                    f"{100 * yo['car_pixel_IoU_test_crops']:.1f} (mask mAP50 {yo['mask_mAP50']:.2f}) |")
+    if not (cs or un):
+        return
+    p = f"{SAT}/README.md"
+    s = open(p).read()
+    a, b = s.find("<!-- RESULTS_TABLE_START -->"), s.find("<!-- RESULTS_TABLE_END -->")
+    if a >= 0 and b > a:
+        s = s[:a] + "<!-- RESULTS_TABLE_START -->\n" + "\n".join(rows) + "\n" + s[b:]
+        open(p, "w").write(s)
+
+
+if __name__ == "__main__":
+    update_sat_readme()
