@@ -1,64 +1,69 @@
-import torch
-from torch.utils.data import Dataset
 import numpy as np
-import tifffile
+import torch
 from PIL import Image
+from torch.utils.data import Dataset
+
+from data.wsi import WSIReader
+
 
 class GigapixelTileDataset(Dataset):
-    """
-    Dataset to handle large pathology/aerial images.
-    It reads a large TIF file using memory mapping, and extracts tiles.
-    """
-    def __init__(self, image_path, tile_size=256, stride=256, transform=None, background_threshold=0.9):
-        self.image_path = image_path
-        self.tile_size = tile_size
-        self.stride = stride
-        self.transform = transform
-        self.background_threshold = background_threshold
-        
-        # Open as memmap using tifffile to avoid loading whole image into RAM
-        # Assuming typical RGB image shape (H, W, 3) or (3, H, W).
-        # tifffile returns (H, W, 3) for standard RGB tif
-        self.memmap = tifffile.memmap(image_path)
-        
-        if len(self.memmap.shape) == 3 and self.memmap.shape[2] == 3:
-            self.H, self.W, self.C = self.memmap.shape
-        elif len(self.memmap.shape) == 3 and self.memmap.shape[0] == 3:
-            # Handle (C, H, W)
-            self.C, self.H, self.W = self.memmap.shape
-            # For simplicity, we'll transpose on the fly if needed, or assume HWC for reading
-        else:
-            raise ValueError(f"Unexpected image shape: {self.memmap.shape}")
+    """Tiles a gigapixel WSI lazily.
 
+    Fixes vs. the first version:
+      * real WSIs are tiled + JPEG-compressed pyramids; `tifffile.memmap`
+        raises on them. We use `WSIReader` (zarr-backed, decodes only the
+        TIFF tiles that are touched) and can tile any pyramid `level`.
+      * the docstring promised background filtering but the code kept every
+        tile. We now compute a tissue mask on a low-resolution thumbnail
+        (Otsu on HSV saturation) and keep only grid cells whose tissue
+        fraction >= `min_tissue` - typically 60-90 % of a slide is glass, so
+        this is the single biggest compute saving in the pipeline.
+    """
+
+    def __init__(self, image_path, tile_size=256, stride=256, transform=None,
+                 level=0, min_tissue=0.25):
+        self.wsi = WSIReader(image_path)
+        self.tile_size, self.stride, self.level = tile_size, stride, level
+        self.transform = transform
+        self.min_tissue = min_tissue
         self.tiles = self._compute_tiles()
 
     def _compute_tiles(self):
-        """
-        Pre-compute coordinates for all valid tiles.
-        We skip tiles that are almost entirely background (white).
-        """
-        valid_tiles = []
-        for y in range(0, self.H - self.tile_size + 1, self.stride):
-            for x in range(0, self.W - self.tile_size + 1, self.stride):
-                valid_tiles.append((y, x))
-        return valid_tiles
+        import cv2
+        thumb, tl = self.wsi.thumbnail(max_side=2048)
+        sat = cv2.cvtColor(thumb, cv2.COLOR_RGB2HSV)[..., 1]
+        _, mask = cv2.threshold(cv2.GaussianBlur(sat, (5, 5), 0), 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        scale = self.wsi.levels[self.level].downsample / self.wsi.levels[tl].downsample
+        valid = []
+        for x, y in self.wsi.iter_tile_coords(self.tile_size, self.stride, self.level):
+            x0, y0 = int(x * scale), int(y * scale)
+            s = max(1, int(self.tile_size * scale))
+            cell = mask[y0:y0 + s, x0:x0 + s]
+            if cell.size and cell.mean() >= self.min_tissue:
+                valid.append((y, x))
+        return valid
 
     def __len__(self):
         return len(self.tiles)
 
     def __getitem__(self, idx):
         y, x = self.tiles[idx]
-        
-        if self.memmap.shape[-1] == 3:
-            patch = self.memmap[y:y+self.tile_size, x:x+self.tile_size, :]
-        else:
-            patch = self.memmap[:, y:y+self.tile_size, x:x+self.tile_size]
-            patch = np.transpose(patch, (1, 2, 0)) # Convert to HWC for PIL
-            
-        # Convert to PIL Image for standard torchvision transforms
+        patch = self.wsi.read_region(x, y, self.tile_size, self.tile_size, level=self.level)
         image = Image.fromarray(patch)
-        
         if self.transform:
             image = self.transform(image)
-            
         return image, torch.tensor([y, x])
+
+
+class NpzTileDataset(Dataset):
+    """Pre-extracted tiles (benchmarks/build_tiles.py output)."""
+
+    def __init__(self, tiles: np.ndarray, transform=None):
+        self.tiles, self.transform = tiles, transform
+
+    def __len__(self):
+        return len(self.tiles)
+
+    def __getitem__(self, idx):
+        img = Image.fromarray(self.tiles[idx])
+        return (self.transform(img) if self.transform else img), torch.tensor([idx, 0])

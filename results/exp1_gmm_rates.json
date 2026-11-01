@@ -1,0 +1,5 @@
+{
+  "gmm_reject_rate_border_tiles": 0.3425,
+  "gmm_reject_rate_test_clean": 0.09694323144104804,
+  "gmm_reject_rate_test_background": 0.98
+}
