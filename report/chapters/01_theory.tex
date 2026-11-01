@@ -1,0 +1,279 @@
+\chapter{Foundations you must know (learning chapter)}
+This chapter is written to be read once, top to bottom. Each section ends with what to say in an interview.
+
+\section{Digital pathology and the H\&E image}
+\textbf{Whole-slide image (WSI).} A glass slide scanned at 40$\times$ ($\approx$0.25\,$\mu$m/px) gives $10^{10}$
+pixels. It is stored as a \emph{pyramid}: level 0 full resolution, each next level downsampled $\times$2, each level
+cut into 256--512\,px JPEG-compressed TIFF tiles. A viewer (or our reader) only decodes the tiles it touches.
+CAMELYON16 levels: 40$\times$, 20$\times$, 10$\times$, \ldots; we tile at level 1 (20$\times$, 0.49\,$\mu$m/px), the usual
+magnification for metastasis detection.
+
+\textbf{H\&E staining.} Haematoxylin binds DNA/chromatin $\Rightarrow$ nuclei blue-purple. Eosin binds proteins
+$\Rightarrow$ cytoplasm, collagen, \emph{proteinaceous fluid} pink. Red blood cells are bright red/orange; fat cells are
+empty (white) after processing.
+
+\textbf{Beer--Lambert law and optical density.} Transmitted intensity $I_c=I_{0}\,e^{-\sum_s \alpha_{s,c} C_s}$ for
+stains $s$ and colour channel $c$. Taking logs gives the optical density
+\[ \mathrm{OD}_c=-\log_{10}\frac{I_c}{I_0}=\sum_s \alpha_{s,c}\,C_s ,\]
+which is \emph{linear} in stain concentration $C_s$. So in OD space every pixel is a non-negative combination of the
+H and E stain vectors, and \textbf{colour deconvolution} (Ruifrok \& Johnston, 2001) recovers $(C_H, C_E)$ by multiplying
+with the inverse stain matrix. A tissue fold (double thickness) doubles OD; that is exactly how our fold simulator works.
+
+\textbf{Stain variation} (different labs, scanners, staining times) is the biggest source of domain shift in
+pathology. Fixes: stain normalisation (Reinhard, Macenko, Vahadane), stain augmentation (HED jitter), or features
+that are invariant to it. We measured the shift between our 7 slides with the Jensen--Shannon divergence of RGB
+histograms (Figure~\ref{fig:slidejs}).
+
+\textbf{Common artefacts} (what QC must catch): out-of-focus (defocus) blur, motion/stitching blur, pen marker,
+tissue folds, air bubbles, over/under-staining or exposure, dust, JPEG compression, sensor noise. \textbf{Fluids}:
+proteinaceous fluid, plasma, oedema and lymph appear as pale, smooth, eosinophilic (pink) areas with few nuclei;
+in lymph nodes they sit in sinuses and vessels. Separating them from stroma and nuclei is a classic colour-clustering
+problem (Section~\ref{sec:fluid}).
+
+\section{Image processing essentials}
+\subsection{Convolution and filtering}
+A linear filter computes $g(x,y)=\sum_{u,v} k(u,v)\,f(x-u,y-v)$. In the Fourier domain it is a multiplication,
+$G=K\cdot F$, so a filter is described by which frequencies it keeps.
+\begin{itemize}
+\item \textbf{Gaussian blur}: $k(u,v)\propto e^{-(u^2+v^2)/2\sigma^2}$. Low-pass; its Fourier transform is another
+Gaussian. It is the standard model of \emph{defocus} (the optical point-spread function of an out-of-focus microscope is
+close to Gaussian/disc). Used to denoise before edge detection and to build scale-spaces. Separable: two 1-D passes.
+\item \textbf{Motion blur}: a 1-D box kernel along the motion direction (length $L$, angle $\theta$); its spectrum has
+zeros along a direction, which is how motion blur can be identified. In line-scan slide scanners it appears when the
+stage moves during exposure.
+\item \textbf{Median filter}: non-linear; removes salt-and-pepper noise while keeping edges. We use
+$|f-\mathrm{median}_3(f)|$ as a noise estimate.
+\item \textbf{Box/mean filter}, \textbf{bilateral filter} (edge-preserving), \textbf{unsharp masking}
+$f+\lambda(f-G_\sigma*f)$ for enhancement.
+\end{itemize}
+
+\subsection{Derivatives, focus measures and edges}
+\begin{itemize}
+\item \textbf{Sobel} kernels estimate $\partial f/\partial x,\partial f/\partial y$ (derivative $\otimes$ smoothing).
+\textbf{Tenengrad} focus $=\mathrm{mean}(G_x^2+G_y^2)$.
+\item \textbf{Laplacian} $\nabla^2 f$ responds to fine detail; the \textbf{variance of the Laplacian}
+(Pech-Pacheco et al., 2000) is the classic blur score: a blurred image has little high-frequency energy, so low variance.
+\item \textbf{Brenner gradient} $\sum (f(x+2)-f(x))^2$; \textbf{FFT high-frequency ratio} (energy outside a low-frequency
+disc). All four are in our 23-D feature vector.
+\item \textbf{Canny edge detector}, 4 steps: (1) Gaussian smoothing, (2) Sobel gradient magnitude and direction,
+(3) non-maximum suppression along the gradient direction (thin edges), (4) double threshold + hysteresis (strong edges
+kept, weak edges kept only if connected to strong ones). We use Canny edge \emph{density} as a structure feature:
+blur, washout and glass reduce it.
+\end{itemize}
+
+\subsection{Thresholding and morphology}
+\textbf{Otsu's method} picks the threshold $t$ that maximises the between-class variance
+$\sigma_B^2(t)=\omega_0\omega_1(\mu_0-\mu_1)^2$ of a 1-D histogram -- equivalent to fitting two classes with equal
+spread. It fails when one class is much broader than the other (faint fat/loose tissue vs. tight glass), which is
+exactly what we measured (Dice 0.53). \textbf{Morphology}: erosion/dilation with a structuring element; opening
+(erode$\to$dilate) removes thin specks and scanner stripes, closing (dilate$\to$erode) fills holes; connected-component
+area filtering removes dust.
+
+\subsection{Colour spaces}
+RGB (device), HSV (saturation separates stained tissue from grey glass), CIE Lab (perceptually uniform; $a^*$ is
+red--green, good for blood), OD/HED (physically linear in stain amount -- the right space for GMMs on H\&E).
+
+\subsection{Motion between frames (for completeness)}
+If asked ``how do you find motion'': frame differencing; dense optical flow (Lucas--Kanade assumes brightness
+constancy $I_x u+I_y v+I_t=0$ in a window and solves least squares; Farneb\"ack fits polynomials);
+\textbf{background subtraction with a per-pixel GMM} (Stauffer--Grimson / OpenCV \texttt{MOG2}): each pixel's
+history is a mixture of $K$ Gaussians, components with high weight/low variance are background, a pixel not matched
+by them is foreground. This is the most famous \emph{edge} use of GMMs (it runs on cheap CCTV hardware).
+In pathology, ``motion'' appears as motion blur and as stitching misalignment between scanner stripes.
+
+\section{Data augmentation (what, why, and what NOT to do in pathology)}
+Augmentation encodes invariances the model should have and reduces overfitting.
+\begin{itemize}
+\item \textbf{Geometric}: rotations by 90$^\circ$ and flips (the dihedral group $D_4$, 8 elements) -- tissue and aerial
+images have no canonical orientation; random crops; scale jitter (multi-scale patches, rates 1--3 in the satellite repo);
+elastic deformation (U-Net paper) for cell shapes.
+\item \textbf{Photometric}: brightness/contrast/gamma, Gaussian blur and noise (robustness), JPEG.
+\item \textbf{Stain augmentation}: perturb the H and E concentrations ($C_s\leftarrow \alpha_s C_s+\beta_s$) in HED
+space (Tellez et al., 2019) -- the single most effective augmentation for cross-centre generalisation; or random
+stain-normalisation targets.
+\item \textbf{Mixing}: MixUp/CutMix (careful with segmentation masks), copy-paste of objects (cars, cells).
+\item \textbf{Test-time augmentation (TTA)}: predict on the 8 $D_4$ transforms, undo each, average softmax maps. Costs
+8$\times$ compute; usually +0.5--2 IoU points.
+\end{itemize}
+\warn{Do not use hue jitter so strong that eosin turns blue -- the model then cannot use colour at all. Do not apply
+augmentations that destroy the label (e.g.\ heavy blur on a ``sharp'' QC label). Our synthetic artefacts are the
+\emph{opposite} use of the same functions: they create the reject class.}
+
+\section{Statistics you will be asked about}
+Let $\mathbf{x}\in\mathbb{R}^d$ be a feature vector, $\bm\mu=\mathbb{E}[\mathbf{x}]$.
+\begin{itemize}
+\item \textbf{Covariance} $\Sigma=\mathbb{E}[(\mathbf{x}-\bm\mu)(\mathbf{x}-\bm\mu)^\top]$ -- how features vary together
+(units: product of units). \textbf{Correlation} $\rho_{ij}=\Sigma_{ij}/\sqrt{\Sigma_{ii}\Sigma_{jj}}\in[-1,1]$ -- unit-free.
+In our 23 features, tissue fraction correlates $-0.99$ with white fraction and $+0.93$ with mean OD; the
+eigen-spectrum shows that 4 directions explain 90\% of the variance and the covariance condition number is
+$1.4\times10^{13}$ -- which is why the GMM needs \emph{covariance regularisation} (\texttt{reg\_covar}).
+\item \textbf{Mahalanobis distance} $D^2=(\mathbf{x}-\bm\mu)^\top\Sigma^{-1}(\mathbf{x}-\bm\mu)$: distance in units of the data's
+own spread, accounting for correlation. A single Gaussian anomaly score is exactly $\tfrac12 D^2$ + const.
+\item \textbf{Entropy} $H(p)=-\sum p\log p$. \textbf{KL divergence}
+$D_{KL}(p\|q)=\sum p\log\frac{p}{q}\ge 0$, asymmetric, infinite if $q=0$ where $p>0$.
+\textbf{Jensen--Shannon} $JS=\tfrac12 D_{KL}(p\|m)+\tfrac12 D_{KL}(q\|m)$, $m=\tfrac{p+q}{2}$: symmetric, bounded in
+$[0,1]$ (base 2), and $\sqrt{JS}$ is a metric. We use JS to rank which feature each artefact moves
+(Table~\ref{tab:js}) and to quantify stain shift between slides.
+\item \textbf{Likelihood, BIC, AIC}: $\mathrm{BIC}=-2\log L+p\log n$ penalises parameters $p$; lower is better.
+BIC assumes i.i.d.\ samples -- tiles from one slide are \emph{not} independent, so BIC over-estimates $K$; we select $K$
+by held-out-\emph{slide} likelihood instead.
+\end{itemize}
+
+\section{Evaluation metrics}
+Confusion matrix: TP, FP, TN, FN.
+\begin{itemize}
+\item \textbf{Precision} $=\frac{TP}{TP+FP}$ (of what I flagged, how much was right); \textbf{Recall/Sensitivity}
+$=\frac{TP}{TP+FN}$ (of what exists, how much I found); \textbf{Specificity} $=\frac{TN}{TN+FP}$;
+\textbf{F1} $=\frac{2PR}{P+R}$; accuracy is misleading under class imbalance.
+\item \textbf{ROC curve / AUROC}: TPR vs FPR over all thresholds; AUROC = probability a random positive scores above a
+random negative; threshold-free, insensitive to prevalence. \textbf{PR curve / AUPRC}: better when positives are rare
+(tumour tiles are 3\% of tissue).
+\item \textbf{IoU (Jaccard)} $=\frac{|A\cap B|}{|A\cup B|}=\frac{TP}{TP+FP+FN}$; \textbf{Dice/F1}
+$=\frac{2|A\cap B|}{|A|+|B|}$; Dice $=\frac{2\,IoU}{1+IoU}$. \textbf{mIoU}: mean over classes (Potsdam usually excludes
+clutter). \textbf{OA}: pixel accuracy.
+\item Pathology-specific: \textbf{FROC} (CAMELYON16 lesion detection: sensitivity at 1/4,1/2,1,2,4,8 false positives per
+slide), slide-level AUC, Cohen's $\kappa$ for grading agreement.
+\item \textbf{Operating point}: in QC we fix the false-rejection rate on good tissue (5\%) and report recall of
+artefacts at that point; in screening we would fix sensitivity (e.g.\ 98\%) and minimise false alarms.
+\end{itemize}
+
+\section{Machine learning basics}
+\textbf{Supervised} learning fits $p(y|\mathbf{x})$ from labelled pairs (logistic regression, SVM, random forest, CNN).
+\textbf{Unsupervised} learning models $p(\mathbf{x})$ or structure without labels (k-means, GMM, PCA, autoencoders).
+\textbf{Self-supervised} creates labels from the data itself (contrastive SimCLR/DINO, masked autoencoders) -- the
+basis of pathology foundation models. \textbf{Weakly supervised} uses coarse labels (slide-level diagnosis) to learn
+tile-level decisions (multiple-instance learning). \textbf{Semi-supervised}: few labels + many unlabelled images.
+\textbf{One-class / novelty detection}: train only on normal data, flag what is unlikely -- our QC gate.
+
+\begin{itemize}
+\item \textbf{Logistic regression}: $p(y{=}1|\mathbf{x})=\sigma(\mathbf{w}^\top\mathbf{x}+b)$, cross-entropy loss, convex.
+\item \textbf{SVM}: max-margin hyperplane; kernels (RBF) for non-linear boundaries; \textbf{one-class SVM} encloses the
+normal data.
+\item \textbf{Decision trees / Random forest}: bagging of decorrelated trees (bootstrap + random feature subsets);
+robust, no scaling needed; strong tabular baseline. \textbf{Gradient boosting} (XGBoost/LightGBM) fits trees to residuals.
+\item \textbf{Isolation forest}: anomalies are isolated by fewer random splits.
+\item \textbf{PCA}: eigenvectors of $\Sigma$; decorrelates and reduces dimension.
+\item \textbf{Bias--variance}, regularisation (L2, dropout, early stopping), cross-validation \emph{grouped by patient
+/ slide} (otherwise leakage: tiles of the same slide in train and test inflate accuracy).
+\end{itemize}
+
+\section{Gaussian Mixture Models (the core of this project)}\label{sec:gmm}
+\subsection{Model}
+\[ p(\mathbf{x})=\sum_{k=1}^K \pi_k\,\mathcal{N}(\mathbf{x}\mid\bm\mu_k,\Sigma_k),\qquad \pi_k\ge0,\ \textstyle\sum_k\pi_k=1, \]
+\[ \mathcal{N}(\mathbf{x}\mid\bm\mu,\Sigma)=(2\pi)^{-d/2}|\Sigma|^{-1/2}\exp\!\big(-\tfrac12(\mathbf{x}-\bm\mu)^\top\Sigma^{-1}(\mathbf{x}-\bm\mu)\big). \]
+A GMM is a \emph{soft clustering} and a \emph{density estimator} at the same time.
+
+\subsection{Fitting with Expectation--Maximisation (EM)}
+Introduce a latent component label $z$. Iterate:
+\begin{description}
+\item[E-step] responsibilities $\gamma_{nk}=\dfrac{\pi_k\mathcal{N}(\mathbf{x}_n|\bm\mu_k,\Sigma_k)}{\sum_j\pi_j\mathcal{N}(\mathbf{x}_n|\bm\mu_j,\Sigma_j)}$.
+\item[M-step] $N_k=\sum_n\gamma_{nk}$, $\pi_k=N_k/N$, $\bm\mu_k=\frac1{N_k}\sum_n\gamma_{nk}\mathbf{x}_n$,
+$\Sigma_k=\frac1{N_k}\sum_n\gamma_{nk}(\mathbf{x}_n-\bm\mu_k)(\mathbf{x}_n-\bm\mu_k)^\top+\lambda I$.
+\end{description}
+Each iteration never decreases the log-likelihood; it converges to a local optimum (so use several initialisations,
+k-means++ init). $\lambda I$ (\texttt{reg\_covar}) prevents singular covariances -- essential with correlated features.
+
+\subsection{GMM vs k-means vs Otsu}
+k-means is the limit of EM with $\Sigma_k=\sigma^2 I$, equal $\pi_k$ and $\sigma\to0$ (hard assignments): it can only draw
+\emph{Voronoi} (straight, equidistant) boundaries. A full-covariance GMM can represent elongated, tilted clusters of
+different sizes and priors and gives calibrated posteriors. Otsu = two 1-D classes with a single cut. In OD space,
+stain clusters are elongated along stain vectors and the background is tiny while stroma is broad -- the GMM's
+assumptions match the physics; k-means' do not. Measured: tissue Dice GMM 0.84 vs k-means 0.14; for tissue components
+k-means never produces a separate fluid cluster.
+
+\subsection{Three ways we use GMMs}
+\begin{enumerate}
+\item \textbf{Pixel GMM, $K=2$}, on (saturation, OD) of the thumbnail $\to$ tissue vs glass (Stage 0).
+\item \textbf{Tile GMM density} $p(\mathbf{x})$ on 23 QC features of clean tiles; score $s(\mathbf{x})=-\log p(\mathbf{x})$;
+reject if $s>\tau$ (Stage 1). Novelty detection.
+\item \textbf{Pixel GMM, $K=7$}, on [H, E, OD, $a^*$, local std] $\to$ components named nuclei / stroma / \textbf{fluid}
+/ blood / background (Stage 2); also a \emph{GMM-Bayes classifier} for satellite pixels (one GMM per class,
+$\hat y=\arg\max_c \log p(\mathbf{x}|c)+\log\pi_c$).
+\end{enumerate}
+\sayit{A GMM gives me a calibrated density with a few thousand parameters. On a CPU it scores a tile in microseconds,
+it needs no labels, and every rejection decomposes into per-feature z-scores, so a QC technician sees `focus 10 sigma
+below normal' instead of a black-box number.}
+
+\section{Neural networks for images}
+\subsection{CNN building blocks}
+Convolution (weight sharing, translation equivariance), receptive field, stride/pooling (downsampling), batch
+normalisation, ReLU, dropout, softmax + cross-entropy. \textbf{Dilated (atrous) convolution} inserts holes in the
+kernel: receptive field grows without losing resolution; \textbf{ASPP} (DeepLab) runs parallel dilations (1, 6, 12, 18)
+for multi-scale context -- the satellite repo's bottleneck uses rates 1, 2, 4, 8.
+
+\subsection{ResNet}
+Deep plain nets degrade (optimisation, vanishing gradients). A residual block learns $F(\mathbf{x})$ and outputs
+$\mathbf{x}+F(\mathbf{x})$; the identity path gives gradients a direct route ($\partial(\mathbf{x}+F)/\partial\mathbf{x}=I+\partial F/\partial \mathbf{x}$).
+Variants: bottleneck (1$\times$1-3$\times$3-1$\times$1), pre-activation. ResNet-18/50 are the standard pathology
+backbones (ImageNet or self-supervised pretrained).
+\warn{The satellite repo calls its blocks ``residual'' but it \emph{concatenates} input and output (DenseNet-style),
+it does not add them. Know the difference.}
+
+\subsection{Efficient CNNs for edge}
+\textbf{MobileNet} (depthwise-separable conv: $3\times3$ per-channel + $1\times1$ mixing, $\sim 8$--$9\times$ fewer FLOPs),
+inverted residuals, squeeze-and-excitation, hard-swish (MobileNetV3); EfficientNet (compound scaling).
+
+\subsection{U-Net (segmentation)}
+Encoder (conv + downsampling) captures \emph{what}; decoder (up-convolution) recovers \emph{where}; \textbf{skip
+connections} concatenate encoder features at the same resolution so fine boundaries survive. Output: per-pixel softmax.
+Losses: cross-entropy (pixel-wise), Dice/Jaccard loss (directly optimise overlap, robust to imbalance), focal loss
+$-(1-p_t)^\gamma\log p_t$ (down-weights easy pixels). Variants: U-Net++, Attention U-Net, nnU-Net (self-configuring --
+the strongest medical baseline), DeepLabv3+ (ASPP + decoder), HoVer-Net (nuclei instance segmentation with horizontal/
+vertical distance maps).
+
+\subsection{Autoencoders, VAE and VQ-VAE}
+\textbf{Autoencoder}: encoder $z=f(\mathbf{x})$, decoder $\hat{\mathbf{x}}=g(z)$, minimise $\|\mathbf{x}-\hat{\mathbf{x}}\|^2$.
+\textbf{VAE}: probabilistic encoder $q(z|\mathbf{x})=\mathcal{N}(\bm\mu,\mathrm{diag}\,\bm\sigma^2)$, prior $p(z)=\mathcal{N}(0,I)$;
+maximise the ELBO
+\[\log p(\mathbf{x})\ \ge\ \mathbb{E}_{q(z|\mathbf{x})}[\log p(\mathbf{x}|z)]-D_{KL}(q(z|\mathbf{x})\,\|\,p(z)),\]
+with the \emph{reparameterisation trick} $z=\bm\mu+\bm\sigma\odot\bm\epsilon$. \textbf{VQ-VAE} (van den Oord et al., 2017)
+replaces the continuous latent with a learned \emph{codebook} of $K$ vectors $\{e_k\}$: $z_q=e_{k^*}$,
+$k^*=\arg\min_k\|z_e-e_k\|$. Loss
+$\|\mathbf{x}-\hat{\mathbf{x}}\|^2+\|\mathrm{sg}[z_e]-e\|^2+\beta\|z_e-\mathrm{sg}[e]\|^2$ (reconstruction + codebook +
+commitment, $\beta=0.25$), gradients pass the non-differentiable argmin with the \emph{straight-through estimator}.
+Perplexity $=\exp(H(\text{code usage}))$ measures how many codes are used. Anomaly score = reconstruction error.
+\warn{Pixel-MSE reconstruction is a weak anomaly score for histology: autoencoders reconstruct tumour texture
+about as well as normal texture. Literature: L1-autoencoder AUROC 0.21 and plain AE 0.66 on CAMELYON16; a perceptual
+(VGG-feature) loss lifts it to 0.93. VQ-VAE is better positioned as a compressor/tokeniser than as a tumour detector.}
+
+\subsection{Object detection and YOLO (v8, v11)}
+Two-stage detectors (Faster R-CNN: region proposals + classification) vs one-stage (SSD, RetinaNet, YOLO: dense
+prediction in one pass). \textbf{YOLOv8} (Ultralytics, 2023): CSP backbone with \emph{C2f} blocks, PAN-FPN neck,
+\emph{anchor-free decoupled head} (separate classification and box branches), Distribution Focal Loss + CIoU for boxes,
+task-aligned label assignment; \texttt{-seg} variants add a YOLACT-style mask head (prototype masks $\times$ per-instance
+coefficients). \textbf{YOLO11} (2024): \emph{C3k2} blocks, \emph{C2PSA} (partial spatial attention) block, fewer
+parameters for the same mAP (YOLO11m $\approx$ 22\% fewer params than YOLOv8m at higher COCO mAP). Metrics: mAP@0.5,
+mAP@0.5:0.95. NMS removes duplicate boxes (YOLOv10 removes NMS by consistent dual assignment). In pathology YOLO is used
+for \emph{countable objects}: mitotic figures, nuclei, glomeruli, ``cells per mm$^2$''; in aerial imagery: cars.
+Semantic segmentation (U-Net) labels every pixel; instance segmentation (YOLO-seg, Mask R-CNN) separates touching objects.
+
+\subsection{Transformers}
+Self-attention $\mathrm{softmax}(QK^\top/\sqrt{d})V$ relates every token to every other: global context, $O(N^2)$ cost.
+\textbf{ViT}: image $\to$ 16$\times$16 patches $\to$ tokens. \textbf{Swin}: windowed attention with shifted windows
+(linear cost, hierarchical). Segmentation: SegFormer, Segmenter, UNetFormer (CNN encoder + transformer decoder;
+86.8\% mIoU on Potsdam), TransUNet, Swin-UNETR (medical). Pathology: \textbf{foundation models} pretrained
+self-supervised on millions of tiles -- CTransPath, UNI, Virchow, Prov-GigaPath, CONCH (vision-language); slide-level
+\textbf{multiple-instance learning}: ABMIL (attention pooling), CLAM, TransMIL. They are the current SOTA but need GPUs;
+our triage gate reduces how many tiles they must embed.
+
+\subsection{Generative and RL approaches (know they exist)}
+GANs (f-AnoGAN for anomaly detection; stain transfer with CycleGAN), diffusion models (AnoDDPM, AnoPILaD: 0.89 patch AUROC
+on CAMELYON16 cross-organ). \textbf{Reinforcement learning} in pathology: learning \emph{where to look} -- an agent
+selects which region/magnification to zoom into next (mimicking a pathologist), trading accuracy for number of tiles
+read; RL is also used for adaptive scan planning. It is the learned version of what our rule-based triage does.
+
+\section{Edge deployment essentials}
+\begin{itemize}
+\item \textbf{Why edge}: slides are 1--4\,GB; uploading every slide to the cloud is slow and raises privacy issues;
+scanner-side PCs and Jetson-class boxes have limited GPU. Doing triage at the edge means only useful tiles (or only QC
+failures) leave the site.
+\item \textbf{ONNX} = framework-neutral graph format; \textbf{ONNX Runtime} executes it on CPU (MLAS), CUDA, TensorRT,
+OpenVINO, CoreML, etc.\ with graph optimisations (constant folding, operator fusion).
+\item \textbf{Quantisation}: FP32$\to$FP16/INT8; static INT8 needs a calibration set to fix activation ranges; dynamic
+quantisation only for weights/linear layers. Typical: 4$\times$ smaller, 2--4$\times$ faster on supporting hardware,
+small accuracy loss -- \emph{always re-validate}.
+\item Pruning, knowledge distillation (small student mimics big teacher), TensorRT engine building, batching, tiling
+I/O (JPEG decode often dominates!).
+\item \textbf{Classical models are the extreme of edge}: our GMM is 1{,}799 numbers in a 45\,KB JSON file and is scored
+by 15 lines of NumPy (\texttt{EdgeGMMScorer}).
+\end{itemize}

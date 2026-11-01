@@ -1,0 +1,68 @@
+\chapter{Literature survey and baselines}
+
+\section{WSI quality control and tissue detection}
+\begin{longtable}{p{4.2cm}p{4.2cm}p{7.4cm}}\toprule
+\textbf{Work} & \textbf{Method} & \textbf{Relevance / numbers}\\\midrule
+Pech-Pacheco et al.\ 2000 & Variance of Laplacian & Classic focus measure; our baseline: QC AUROC 0.76 (blur recall 1.0, everything else low).\\
+Janowczyk et al.\ 2019, \emph{HistoQC} & Rule set on hand-crafted features & Open-source WSI QC used in many labs; our HistoQC-style rule set: AUROC 0.86.\\
+Senaras et al.\ 2018, \emph{DeepFocus} & CNN focus classifier & Supervised blur detection.\\
+Wang et al.\ 2020, \emph{FocusLiteNN} & Tiny CNN ($\sim$100 params) & Edge-friendly focus quality; shows classical-sized models suffice for blur.\\
+Kanwal et al.\ 2022 & CNN/ViT artefact detection & Multi-artefact (blur, folds, air, damage) supervised detection.\\
+B\'andi et al.\ 2019 (PeerJ) & FCN tissue segmentation & Source of the CAMELYON16 tissue masks used as our Stage-0 ground truth.\\
+Otsu 1979 & Histogram threshold & Our baseline: tissue Dice 0.52--0.55.\\
+\bottomrule\end{longtable}
+
+\section{Anomaly / novelty detection on CAMELYON16 (unsupervised tumour detection)}
+\begin{longtable}{p{5.2cm}p{3cm}p{7.6cm}}\toprule
+\textbf{Method (paper)} & \textbf{AUROC} & \textbf{Notes}\\\midrule
+L1 autoencoder, unsupervised hyper-params (Shvetsova et al.\ 2021, Table 4) & 0.211 & Pixel loss reconstructs tumour too well.\\
+Deep GEO (geometric self-supervision) & 0.524 & Pathology is rotation-invariant: method fails.\\
+AE / MemAE, cross-organ (Wang et al.\ 2025, AnoPILaD) & 0.658 / 0.661 & Trained on gastric LN, tested on C16.\\
+AnoDDPM diffusion (same) & 0.686 & \\
+PIAD / Deep-IF (ImageNet features + isolation forest) & 0.895 / 0.906 & Deep features $\gg$ pixels.\\
+AnoPILaD (latent diffusion + CONCH prompts) & 0.888 & Cross-organ.\\
+Deep perceptual AE + progressive growing (Shvetsova 2021) & 0.934 & In-domain, weakly-supervised hyper-parameter choice.\\
+\textbf{Ours: GMM on 23 QC features} & \textbf{0.740} & 45\,KB, CPU, not designed for tumour detection.\\
+\textbf{Ours: GMM tissue-component fractions + LR} & \textbf{0.931} & 5 numbers per tile (uses tumour labels of 1 train slide in the LR).\\
+\bottomrule\end{longtable}
+
+\section{Supervised CAMELYON16 / PCam (upper bounds)}
+Bejnordi et al.\ (JAMA 2017): best CAMELYON16 algorithm slide-level AUC 0.994 (Harvard/MIT, GoogLeNet), lesion FROC 0.807,
+outperforming pathologists under time constraint. PatchCamelyon (Veeling et al.\ 2018, 96$\times$96 patches): rotation-
+equivariant CNN AUC $\approx$0.96. Attention MIL / CLAM / TransMIL with foundation-model features (UNI, CTransPath):
+slide AUC $\approx$0.93--0.99 with only slide labels.
+
+\section{Remote-sensing segmentation (ISPRS Potsdam, 5 classes, clutter excluded)}
+From Wang et al.\ (2022) \emph{UNetFormer}, ISPRS J.\ Photogramm.\ (Tables 1, 9, 12):
+\begin{longtable}{p{6cm}p{3cm}rr}\toprule
+\textbf{Method} & \textbf{Backbone} & \textbf{mF1} & \textbf{mIoU}\\\midrule
+ERFNet & -- & 85.8 & 76.2\\
+DANet & ResNet-18 & 88.9 & 80.3\\
+BiSeNet & ResNet-18 & 89.8 & 81.7\\
+U-Net + ResNet-18 (UNetFormer ablation baseline) & ResNet-18 & -- & 82.5\\
+MAResU-Net & ResNet-18 & 90.5 & 83.9\\
+SwinUperNet & Swin-T & 92.2 & 85.8\\
+ABCNet & ResNet-18 & 92.7 & 86.5\\
+UNetFormer & ResNet-18 & 92.8 & 86.8\\
+FT-UNetFormer & Swin-B & 93.3 & 87.5\\
+HMANet & ResNet-101 & 93.2 & 87.3\\
+\bottomrule\end{longtable}
+These use the full 23-tile training set, 512--1024 crops, 100 epochs on a GPU, multi-scale + flip TTA.
+
+\section{Detection / instance segmentation}
+YOLOv8 (Ultralytics 2023) and YOLO11 (2024): real-time one-stage detectors with segmentation heads; YOLO11 reports
+higher COCO mAP with $\sim$22\% fewer parameters than YOLOv8 at the m scale. Pathology use: mitosis detection (MIDOG),
+nuclei (HoVer-Net, StarDist and YOLO variants), cell counting. Aerial use: vehicles (Potsdam cars).
+
+\section{Key references}
+\begin{itemize}
+\item Ruifrok \& Johnston, \emph{Quantification of histochemical staining by color deconvolution}, 2001.
+\item Macenko et al., \emph{A method for normalizing histology slides}, ISBI 2009; Tellez et al., \emph{Quantifying the effects of data augmentation and stain color normalization}, MedIA 2019.
+\item van den Oord et al., \emph{Neural Discrete Representation Learning} (VQ-VAE), NeurIPS 2017.
+\item Ronneberger et al., \emph{U-Net}, MICCAI 2015; He et al., \emph{ResNet}, CVPR 2016; Chen et al., \emph{DeepLab}, 2017/2018.
+\item Shvetsova et al., \emph{Anomaly Detection in Medical Imaging with Deep Perceptual Autoencoders}, IEEE Access 2021 (arXiv:2006.13265).
+\item Wang et al., \emph{AnoPILaD}, 2025 (arXiv:2508.15236); Wang et al., \emph{UNetFormer}, 2022 (arXiv:2109.08937).
+\item Bejnordi et al., JAMA 2017; Litjens et al., \emph{1399 H\&E-stained sentinel lymph node sections} (CAMELYON), GigaScience 2018.
+\item Stauffer \& Grimson, \emph{Adaptive background mixture models}, CVPR 1999 (GMM background subtraction).
+\item Janowczyk et al., \emph{HistoQC}, JCO CCI 2019.
+\end{itemize}

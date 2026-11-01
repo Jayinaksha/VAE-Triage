@@ -1,0 +1,49 @@
+\chapter{What to change in the projects, and why it helps on the edge}
+
+\section{VAE-Triage: changes (done in this study unless marked TODO)}
+\begin{longtable}{p{5.2cm}p{5.4cm}p{5.4cm}}\toprule
+\textbf{Change} & \textbf{Why} & \textbf{Edge benefit / evidence}\\\midrule
+Fix output unpacking in train/triage & Training crashed & Pipeline runs at all\\
+Lazy zarr WSI reader (pyramid aware) & memmap fails on compressed WSIs & RAM O(tile) instead of O(slide); read only needed levels\\
+Thumbnail GMM tissue mask + morphology & Skip glass before reading 20$\times$ tiles & 69.6\% of tiles never decoded; Dice 0.84\\
+23 physics features + GMM density & Unsupervised, explainable QC & 45\,KB, NumPy-only, 0.01\,ms score; AUROC 0.94\\
+Features on 128\,px & Halve cost & 2.1\,ms/tile, AUROC 0.95 (no loss)\\
+Slide-level (LOSO) calibration & Same-slide calibration over-rejects & Tumour false rejection 43\%$\to$3.5\%\\
+$K$ by held-out-slide likelihood & BIC assumes i.i.d.\ tiles & Fewer components, better generalisation\\
+Rejection reasons (z-scores) & QC technician needs ``why'' & Actionable rescan requests\\
+GMM tissue components (fluid, nuclei, stroma, blood, fat) & Cheap morphology summary & 5 numbers/tile; tumour AUROC 0.93\\
+Keep VQ-VAE only as compressor / novelty signal & MSE QC AUROC 0.38 & Avoids a 23\,ms/tile model that hurts QC\\
+TODO: stain augmentation + many slides for supervised heads & 1-slide CNN: 0.56 AUROC & Generalisation across centres\\
+TODO: perceptual/feature-space anomaly score & Pixel MSE is weak & Lit.\ 0.66$\to$0.93\\
+TODO: small supervised head for frequent known artefacts & MobileNet 0.976 on seen types & Combine with GMM for unseen\\
+TODO: tile-level JPEG decode with libjpeg-turbo / GPU (nvJPEG) & Decoding dominates I/O & Throughput\\
+TODO: export GMM to C / ONNX (MatMul + LogSumExp) & Deploy inside scanner software & No Python at the edge\\
+\bottomrule\end{longtable}
+
+\section{Satellite repo: changes}
+\begin{longtable}{p{5.5cm}p{5.2cm}p{5.3cm}}\toprule
+\textbf{Change} & \textbf{Why} & \textbf{Benefit}\\\midrule
+Border-aligned last patch (done) & 3.7\% of pixels never predicted & Correct full-tile maps\\
+Accept nested config (done) & num\_classes silently 5 & Correct shapes\\
+Overlap 50\% + Gaussian/Hann blending (TODO) & Seams at patch borders & +IoU at boundaries\\
+Additive residuals or rename & Concats are not residuals & Correct terminology; fewer params\\
+Pretrained encoder (ResNet-18/34) (TODO) & Literature baseline 82.5$\to$86.8 mIoU & Faster convergence\\
+Dice/Lov\'asz + CE loss, class weights for car/clutter & Imbalance & Small-object IoU\\
+Report on the official test split with eroded GT & Comparability & Credible numbers\\
+Export to ONNX + INT8, measure on target & Edge & 4$\times$ smaller (validate speed!)\\
+Add seaborn to requirements or drop import & Clean install fails & Reproducibility\\
+\bottomrule\end{longtable}
+
+\section{Edge deployment design for a pathology lab}
+\begin{enumerate}
+\item \textbf{Scanner-side box (CPU / Jetson):} read pyramid lazily $\to$ thumbnail GMM tissue mask $\to$ 20$\times$ tiles
+$\to$ 128\,px features $\to$ GMM QC $\to$ (a) QC report per slide with rejected-tile reasons and a ``rescan'' flag if the
+rejected tissue fraction exceeds a limit; (b) component fractions and a priority score.
+\item \textbf{Upload only kept tiles (or only slides that pass QC)} to the GPU server / cloud: 3--4$\times$ less data and compute.
+\item \textbf{Heavy model} (U-Net/DeepLab for segmentation; foundation-model features + MIL for slide diagnosis) only on
+kept tiles; TTA only on uncertain tiles.
+\item \textbf{Monitoring}: the GMM log-likelihood distribution per slide is a free drift detector -- a new scanner or
+stain protocol shifts it before accuracy drops.
+\end{enumerate}
+\keyidea{Edge = do the cheap, label-free, high-recall decisions next to the data; keep the expensive, label-hungry
+decisions on the GPU. The GMM gate is the boundary between the two.}

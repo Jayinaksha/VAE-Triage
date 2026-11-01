@@ -1,0 +1,67 @@
+\chapter{Interview preparation}
+
+\section{The 60-second pitch}
+\sayit{I built an edge-first triage pipeline for gigapixel H\&E slides. A whole slide is a 100k by 200k pyramid, and
+about 70\% of it is glass. On a thumbnail, a two-component Gaussian mixture on saturation and optical density finds the
+tissue with Dice 0.84, against 0.53 for Otsu. On each 20$\times$ tile I compute 23 physically meaningful features -- focus,
+stain, ink, folds, noise -- and score them with a GMM density learned only from clean tissue. That gives 0.94 AUROC for
+artefacts, catches artefact types it never saw, with a 45 KB model that scores in microseconds and explains every
+rejection. A pixel-level GMM in optical-density space also separates nuclei, stroma, fluid, blood and fat, and those
+fractions alone give 0.93 AUROC for tumour vs normal. Only the good tiles go to the segmentation network, which in my
+second project is a residual U-Net with a dilated bottleneck, patch stitching and test-time augmentation.}
+
+\section{Likely questions with model answers}
+\begin{description}
+\item[Why GMM and not a CNN for triage?] Density estimation without labels; novel artefacts (64--99\% recall on unseen types
+vs 7--64\% for supervised); 45\,KB; interpretable; calibrated threshold = chosen false-rejection rate. A CNN is better
+when labelled examples of a failure mode exist (0.976) -- I would add one as a second head.
+\item[Why GMM and not k-means?] k-means = GMM with identical spherical covariances and hard assignment; real clusters
+in OD space are elongated and of very different size. Measured tissue Dice 0.84 vs 0.14; k-means never isolates fluid.
+\item[How did you choose $K$?] Held-out-slide log-likelihood (BIC over-estimates because tiles of a slide are correlated).
+K=1 is already strong -- with few slides the simplest density generalises best.
+\item[How do you set the threshold?] 95th percentile of scores on clean tiles of \emph{slides not used for fitting}
+(leave-one-slide-out). Same-slide calibration rejected 43\% of tumour tiles.
+\item[How do you separate fluid?] Beer--Lambert $\to$ optical density $\to$ colour deconvolution into H and E; pixel GMM on
+[H, E, OD, $a^*$, local std]; the pale, eosin-dominant, low-OD component is fluid (proteinaceous fluid/plasma/oedema);
+nuclei = haematoxylin-dominant; blood = high $a^*$. Soft posteriors give a confidence map. Validation: 79\% agreement across
+slides, k-means cannot separate it, fractions predict tumour at 0.93.
+\item[What is the VQ-VAE for, then?] Compression/tokenisation of tiles and a tumour-novelty signal (0.75). Its MSE is a bad QC
+score (0.38) because blurred and empty tiles are easy to reconstruct -- I verified that and changed the design.
+\item[Correlation vs covariance?] Covariance has units and scale; correlation is covariance of standardised variables in
+$[-1,1]$. Our features have $|\rho|>0.9$ pairs and a covariance condition number $10^{13}$ -- hence regularised covariances.
+\item[KL vs JS?] KL asymmetric, unbounded, undefined with zero bins; JS symmetric, bounded $[0,1]$; we used JS to measure
+which feature an artefact shifts and the stain shift between slides.
+\item[Precision vs recall in QC?] Recall = fraction of bad tiles caught; precision = fraction of rejections that were bad;
+specificity = good tissue kept. We fix specificity (95\% nominal) and maximise recall; and we check tumour is not rejected.
+\item[IoU vs Dice?] Dice $=2IoU/(1+IoU)$, both overlap measures; Dice weights the intersection more; mIoU averages over
+classes so small classes (cars, tumour) count equally.
+\item[Gaussian vs motion blur? How detect?] Gaussian = isotropic low-pass (defocus); motion = directional box PSF.
+Detect via Laplacian variance/Tenengrad/FFT high-frequency ratio; motion blur shows directional spectral zeros.
+\item[Explain Canny.] Gaussian smoothing, Sobel gradients, non-maximum suppression, hysteresis with two thresholds.
+\item[Data augmentation in pathology?] $D_4$ rotations/flips, HED stain jitter, brightness/contrast, blur/noise, elastic;
+never augment away the label; TTA at inference.
+\item[Supervised vs unsupervised?] Labels vs none; QC is novelty detection (unsupervised), diagnosis is supervised or weakly
+supervised (MIL with slide labels).
+\item[U-Net and ResNet?] Encoder--decoder with skip concatenations; ResNet adds identity shortcuts for gradient flow. Our
+satellite ``residual'' is concatenation -- I fixed the terminology.
+\item[VAE vs VQ-VAE?] Continuous Gaussian latent with KL to $\mathcal{N}(0,I)$ (ELBO, reparameterisation) vs discrete codebook
+with commitment loss and straight-through gradients; VQ-VAE avoids posterior collapse and gives tokens.
+\item[YOLOv8 vs YOLO11?] Both anchor-free one-stage; v8 C2f blocks + decoupled head; 11 adds C3k2 and C2PSA attention,
+fewer parameters for higher mAP; -seg heads predict prototype masks. Use for countable objects (mitoses, nuclei, cars).
+\item[Transformers in pathology?] ViT/Swin backbones, foundation models (UNI, Virchow, CONCH), MIL aggregators
+(ABMIL, CLAM, TransMIL). Expensive; triage reduces the number of tiles they embed.
+\item[Why ONNX Runtime?] Framework-independent graph, optimised CPU/GPU kernels, INT8; but measure: INT8 gave 3.7$\times$
+smaller models and no speed-up on our CPU.
+\item[How do you avoid leakage?] Split by slide/patient, never by tile; calibrate on unseen slides.
+\item[Biggest limitation?] Synthetic artefacts (no public artefact labels); 7 slides; tissue GT itself from a CNN; fluid has
+no pixel ground truth. Next step: a small annotated artefact set from the lab's own scanners.
+\end{description}
+
+\section{Do and don't}
+\begin{itemize}
+\item DO quote only numbers from this report and say how they were measured (slides, split, CPU).
+\item DO mention the bugs you found and fixed -- it shows ownership.
+\item DON'T claim SOTA. Classical Potsdam mIoU is 46--48 vs 87 for deep SOTA; that is the point: GMMs for colour/density
+problems, CNNs for shape/semantics.
+\item DON'T call concatenation a residual connection, or say scatter\_nd if the code loops.
+\end{itemize}

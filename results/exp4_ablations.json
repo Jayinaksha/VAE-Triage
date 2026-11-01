@@ -1,0 +1,44 @@
+{
+  "downsampled128_K1": {
+    "auroc": 0.9504387606571013,
+    "recall": 0.8828571428571429,
+    "specificity": 0.9248908296943231,
+    "feature_ms_per_tile": 2.115817056111256
+  },
+  "downsampled128_K6": {
+    "auroc": 0.9393431066749843,
+    "recall": 0.8671428571428571,
+    "specificity": 0.9366812227074236,
+    "feature_ms_per_tile": 2.115817056111256
+  },
+  "unseen_artifact_recall": {
+    "Logistic regression (supervised, 6 artefact types seen)": {
+      "bubble": 0.12666666666666668,
+      "pen_mark": 0.64,
+      "tissue_fold": 0.41333333333333333,
+      "jpeg": 0.46,
+      "clean_false_reject": 0.04061135371179039
+    },
+    "Random forest (supervised, 6 artefact types seen)": {
+      "bubble": 0.06666666666666667,
+      "pen_mark": 0.64,
+      "tissue_fold": 0.24,
+      "jpeg": 0.22,
+      "clean_false_reject": 0.06200873362445415
+    },
+    "GMM K=1 (no artefact ever seen)": {
+      "bubble": 0.6133333333333333,
+      "pen_mark": 0.8333333333333334,
+      "tissue_fold": 0.9133333333333333,
+      "jpeg": 0.96,
+      "clean_false_reject": 0.06768558951965066
+    },
+    "GMM K=6 (no artefact ever seen)": {
+      "bubble": 0.64,
+      "pen_mark": 0.8466666666666667,
+      "tissue_fold": 0.94,
+      "jpeg": 0.9866666666666667,
+      "clean_false_reject": 0.07161572052401746
+    }
+  }
+}

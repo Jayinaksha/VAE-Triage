@@ -55,3 +55,10 @@ python inference/export.py --checkpoint checkpoints/vq_vae_epoch_5.pt --output_p
 - Custom memory-mapped tiling for high-resolution images.
 - Unsupervised anomaly detection via VQ-VAE reconstruction loss.
 - Scalable deployment pipeline (ONNX).
+
+## 📑 Technical report, benchmarks and interview deck (Nov 2026)
+
+* **[report/Technical_Report.pdf](report/Technical_Report.pdf)** – full LaTeX report: theory, pipelines, benchmarks on real CAMELYON16 slides and ISPRS Potsdam, literature comparison, edge-deployment analysis, interview Q&A, reproduction steps.
+* **[report/REPORT.md](report/REPORT.md)** – the same report in Markdown.
+* **[report/Interview_Slides.pptx](report/Interview_Slides.pptx)** (+ PDF) – 15-slide presentation.
+* Benchmarks: `benchmarks/`, raw numbers: `results/*.json`.

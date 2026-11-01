@@ -1,0 +1,39 @@
+\documentclass[11pt,a4paper]{report}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{graphicx}
+\usepackage{booktabs,longtable,array,float,adjustbox}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,citecolor=green!40!black]{hyperref}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{caption}
+\setlist{itemsep=2pt,topsep=3pt}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,backgroundcolor=\color{gray!6},columns=fullflexible}
+\graphicspath{{figures/}}
+\newcommand{\keyidea}[1]{\par\noindent\fcolorbox{green!50!black}{green!4}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\textbf{Key idea.} #1}}\par\medskip}
+\newcommand{\sayit}[1]{\par\noindent\fcolorbox{blue!50!black}{blue!3}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\textbf{Say it in the interview:} \emph{#1}}}\par\medskip}
+\newcommand{\warn}[1]{\par\noindent\fcolorbox{red!60!black}{red!3}{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{\textbf{Careful:} #1}}\par\medskip}
+
+\title{\textbf{Edge-First Image Analysis for Digital Pathology}\\[4pt]
+\large Technical report, benchmark study and interview guide for two projects:\\
+\emph{VAE-Triage} (gigapixel WSI triage) and \emph{Satellite\_based\_tile\_segmentation} (high-resolution segmentation)}
+\author{Prepared for the AIRA Matrix interview \\ \small All numbers in this report were measured in this study unless marked ``literature''.}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\input{chapters/00_summary}
+\input{chapters/01_theory}
+\input{chapters/02_vae_triage}
+\input{chapters/03_satellite}
+\input{chapters/04_literature}
+\input{chapters/05_changes_edge}
+\input{chapters/06_interview}
+\input{chapters/07_reproduce}
+
+\end{document}

@@ -1,0 +1,12 @@
+**Measured inference cost on this 4-vCPU cloud container (no GPU).**
+
+| Component | ms / 256px tile | Model size | Hardware |
+|---|---|---|---|
+| Hand-crafted features (23-D, NumPy/OpenCV) | 5.0 | 0 (no weights) | CPU, 1 core |
+| GMM scorer (NumPy, JSON params) | 0.0093 | 45 KB JSON (1799 params) | CPU |
+| VQ-VAE PyTorch FP32 | 37.21 | 0.69 M params | CPU, 4 threads |
+| VQ-VAE ONNX Runtime FP32 | 22.88 | 2.9 MB | CPU, 4 threads |
+| VQ-VAE ONNX Runtime INT8 | 22.74 | 0.8 MB | CPU, 4 threads |
+| MobileNetV3-S ONNX Runtime FP32 | 0.60 | 6.1 MB | CPU, 4 threads |
+| MobileNetV3-S ONNX Runtime INT8 | 1.39 | 1.7 MB | CPU, 4 threads |
+| ResNet-18 features PyTorch FP32 | 15.83 |  | CPU, 4 threads |

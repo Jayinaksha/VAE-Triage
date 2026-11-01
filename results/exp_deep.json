@@ -1,0 +1,185 @@
+{
+  "qc": [
+    {
+      "method": "VQ-VAE recon-MSE (LOSO-calibrated threshold)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.37630193387398625,
+      "auprc": 0.5168520444595142,
+      "auroc_ci95": [
+        0.3572010666519069,
+        0.39349278203635946
+      ],
+      "precision": 0.7357001972386588,
+      "recall": 0.17761904761904762,
+      "f1": 0.28615266589950134,
+      "specificity": 0.9414847161572052,
+      "accuracy": 0.5760820045558086,
+      "per_kind_recall": {
+        "background": 0.0016666666666666668,
+        "bubble": 0.07333333333333333,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 0.0,
+        "jpeg": 0.06,
+        "motion_blur": 0.0,
+        "partial_blur": 0.0,
+        "pen_mark": 0.26,
+        "sensor_noise": 0.54,
+        "tissue_fold": 0.5333333333333333,
+        "washout": 0.013333333333333334
+      },
+      "reject_rate_clean_normal": 0.06888888888888889,
+      "reject_rate_clean_tumor": 0.02040816326530612
+    },
+    {
+      "method": "VQ-VAE recon-MSE (repo default threshold 0.05)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.37630193387398625,
+      "auprc": 0.5168520444595142,
+      "auroc_ci95": [
+        0.3572010666519069,
+        0.39349278203635946
+      ],
+      "precision": 0.5815508021390374,
+      "recall": 0.20714285714285716,
+      "f1": 0.30547752808988765,
+      "specificity": 0.8633187772925764,
+      "accuracy": 0.5494305239179954,
+      "per_kind_recall": {
+        "background": 0.0016666666666666668,
+        "bubble": 0.15333333333333332,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 0.0,
+        "jpeg": 0.12,
+        "motion_blur": 0.0,
+        "partial_blur": 0.0,
+        "pen_mark": 0.3466666666666667,
+        "sensor_noise": 0.6666666666666666,
+        "tissue_fold": 0.5933333333333334,
+        "washout": 0.013333333333333334
+      },
+      "reject_rate_clean_normal": 0.1388888888888889,
+      "reject_rate_clean_tumor": 0.12857142857142856
+    },
+    {
+      "method": "ResNet18-ImageNet feats + PCA32 + GMM(K=4)",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.7689091287169889,
+      "auprc": 0.7079718611177719,
+      "auroc_ci95": [
+        0.7546249027575607,
+        0.7812434717139807
+      ],
+      "precision": 0.7137931034482758,
+      "recall": 0.19714285714285715,
+      "f1": 0.30895522388059704,
+      "specificity": 0.9275109170305676,
+      "accuracy": 0.5781321184510251,
+      "per_kind_recall": {
+        "background": 0.043333333333333335,
+        "bubble": 0.13333333333333333,
+        "dark_exposure": 0.16666666666666666,
+        "gaussian_blur": 0.24666666666666667,
+        "jpeg": 0.49333333333333335,
+        "motion_blur": 0.5866666666666667,
+        "partial_blur": 0.11333333333333333,
+        "pen_mark": 0.07333333333333333,
+        "sensor_noise": 0.25333333333333335,
+        "tissue_fold": 0.12666666666666668,
+        "washout": 0.3933333333333333
+      },
+      "reject_rate_clean_normal": 0.08055555555555556,
+      "reject_rate_clean_tumor": 0.04285714285714286
+    },
+    {
+      "method": "MobileNetV3-Small supervised QC",
+      "n": 4390,
+      "pos": 2100,
+      "auroc": 0.9755928467456852,
+      "auprc": 0.9576347017815365,
+      "auroc_ci95": [
+        0.9703283446506727,
+        0.9804421821593835
+      ],
+      "precision": 0.8763280917977051,
+      "recall": 0.981904761904762,
+      "f1": 0.9261172243431395,
+      "specificity": 0.8729257641921397,
+      "accuracy": 0.9250569476082005,
+      "per_kind_recall": {
+        "background": 0.9966666666666667,
+        "bubble": 0.9933333333333333,
+        "dark_exposure": 1.0,
+        "gaussian_blur": 1.0,
+        "jpeg": 1.0,
+        "motion_blur": 1.0,
+        "partial_blur": 1.0,
+        "pen_mark": 0.8,
+        "sensor_noise": 1.0,
+        "tissue_fold": 0.9666666666666667,
+        "washout": 1.0
+      },
+      "reject_rate_clean_normal": 0.14777777777777779,
+      "reject_rate_clean_tumor": 0.05102040816326531
+    }
+  ],
+  "tumor": [
+    {
+      "method": "VQ-VAE recon-MSE novelty (trained on normal)",
+      "n": 2290,
+      "pos": 490,
+      "auroc": 0.7490226757369615,
+      "auprc": 0.3173632043869055,
+      "auroc_ci95": [
+        0.7315513633361459,
+        0.7677536980287369
+      ]
+    },
+    {
+      "method": "ResNet18 feats + GMM novelty (trained on normal)",
+      "n": 2290,
+      "pos": 490,
+      "auroc": 0.6710907029478459,
+      "auprc": 0.27178521098217906,
+      "auroc_ci95": [
+        0.6495970422582724,
+        0.6920631035853597
+      ]
+    },
+    {
+      "method": "MobileNetV3-Small supervised (1 tumour slide)",
+      "n": 2290,
+      "pos": 490,
+      "auroc": 0.5570606575963719,
+      "auprc": 0.43567096078856127,
+      "auroc_ci95": [
+        0.5223860863684652,
+        0.5897105627046002
+      ],
+      "precision": 0.6185567010309279,
+      "recall": 0.24489795918367346,
+      "f1": 0.3508771929824561,
+      "specificity": 0.9588888888888889,
+      "accuracy": 0.8061135371179039
+    }
+  ],
+  "latency": {
+    "vqvae_torch_fp32_ms_per_tile": 37.21173170833936,
+    "mobilenet_v3_small_torch_fp32_ms_per_tile": 2.201731395833425,
+    "vqvae_ort_fp32_ms_per_tile": 22.87925964166675,
+    "mobilenet_ort_fp32_ms_per_tile": 0.5969934500001273,
+    "vqvae_ort_int8_ms_per_tile": 22.741579770831777,
+    "vqvae_onnx_fp32_MB": 2.928781,
+    "vqvae_onnx_int8_MB": 0.796054,
+    "mobilenet_ort_int8_ms_per_tile": 1.3920164208343522,
+    "mobilenet_onnx_fp32_MB": 6.085127,
+    "mobilenet_onnx_int8_MB": 1.736028,
+    "vqvae_int8_vs_fp32_score_spearman": 0.9878032730601968,
+    "resnet18_feature_ms_per_tile_torch": 15.829636581583202,
+    "vqvae_train_minutes_cpu": 37.98367336198333,
+    "vqvae_params": 694851,
+    "mobilenet_params": 1518881
+  }
+}
