@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Edge-First Pathology Triage & High-Res Segmentation</title>
+<meta name="description" content="GMM-based edge triage for gigapixel H&E slides and high-resolution U-Net segmentation: pipelines, benchmarks, videos and report.">
+<style>
+:root{--bg:#fafaf8;--fg:#1e1e1e;--mut:#5d6168;--card:#fff;--line:#e3e5e8;--acc:#1b7f5b;--acc2:#e7f5ee;--hl:#eef8f2}
+@media (prefers-color-scheme:dark){:root{--bg:#121414;--fg:#e9ecea;--mut:#a6aca9;--card:#1b1e1e;--line:#2c3130;--acc:#4cc095;--acc2:#16302a;--hl:#18302a}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+a{color:var(--acc)}header{padding:56px 16px 36px;text-align:center;border-bottom:1px solid var(--line)}
+h1{font-size:clamp(1.7rem,4vw,2.6rem);margin:0 0 10px;line-height:1.2}h2{font-size:1.6rem;margin:48px 0 8px}h3{margin:28px 0 6px}
+.sub{color:var(--mut);max-width:760px;margin:0 auto 22px}.btns a{display:inline-block;margin:4px;padding:9px 16px;border-radius:8px;border:1px solid var(--acc);text-decoration:none;font-weight:600}
+.btns a.p{background:var(--acc);color:#fff}main{max-width:1080px;margin:0 auto;padding:0 16px 80px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:28px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}.stat .n{font-size:1.7rem;font-weight:800;color:var(--acc)}.stat .l{color:var(--mut);font-size:.9rem}
+.vids{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}video{width:100%;border-radius:10px;border:1px solid var(--line);background:#000}
+figure{margin:18px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}figure img{width:100%;height:auto;border-radius:6px;background:#fff}
+figcaption{color:var(--mut);font-size:.9rem;margin-top:6px}.tw{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:.92rem;background:var(--card)}
+th,td{border-bottom:1px solid var(--line);padding:7px 10px;text-align:left}th{background:var(--acc2)}tr.hl td{background:var(--hl);font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}.note{border-left:4px solid var(--acc);background:var(--card);padding:10px 14px;border-radius:6px}
+.warn{border-left-color:#c0563b}code{background:var(--acc2);padding:1px 5px;border-radius:4px}footer{text-align:center;color:var(--mut);padding:30px 16px;border-top:1px solid var(--line)}
+nav{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:8px 16px;text-align:center;z-index:2;overflow-x:auto;white-space:nowrap}nav a{margin:0 10px;text-decoration:none;font-weight:600}
+</style></head><body>
+<header><h1>Edge-First Image Analysis for Digital Pathology</h1>
+<p class="sub">Two projects: <b>VAE-Triage</b> — Gaussian-mixture-model triage, quality control and fluid separation for gigapixel H&amp;E slides —
+and <b>High-resolution segmentation</b> with a residual U-Net. Benchmarked on real CAMELYON16 breast lymph-node slides and ISPRS Potsdam, CPU only.</p>
+<div class="btns"><a class="p" href="assets/Technical_Report.pdf">📑 Technical report (PDF)</a><a href="assets/Interview_Slides.pdf">🎤 Slides (PDF)</a>
+<a href="assets/Interview_Slides.pptx">Slides (PPTX)</a><a href="https://github.com/Jayinaksha/VAE-Triage">VAE-Triage repo</a><a href="https://github.com/Jayinaksha/Satellite_based_tile_segmentation">Segmentation repo</a></div></header>
+<nav><a href="#videos">Videos</a><a href="#triage">VAE-Triage</a><a href="#fluid">Fluid / components</a><a href="#edge">Edge</a><a href="#seg">Segmentation</a><a href="#fixes">Fixes</a><a href="#repro">Reproduce</a></nav>
+<main>
+<div class="stats"><div class="stat"><div class="n">69.6%</div><div class="l">of 203k slide tiles are empty glass</div></div><div class="stat"><div class="n">0.84</div><div class="l">tissue Dice, GMM (Otsu 0.53)</div></div><div class="stat"><div class="n">0.94</div><div class="l">QC AUROC, no labels</div></div><div class="stat"><div class="n">45 KB</div><div class="l">edge QC model, NumPy only</div></div><div class="stat"><div class="n">64–99%</div><div class="l">recall on never-seen artefacts</div></div><div class="stat"><div class="n">0.93</div><div class="l">tumour AUROC from GMM tissue fractions</div></div></div>
+
+<h2 id="videos">🎬 Explainer videos</h2>
+<div class="vids"><div><h3>VAE-Triage (3.6 min)</h3><video controls preload="metadata" poster="assets/poster_vae.jpg"><source src="assets/VAE-Triage_explainer.mp4" type="video/mp4"></video></div>
+<div><h3>High-resolution segmentation</h3><video controls preload="metadata" poster="assets/poster_sat.jpg"><source src="assets/Satellite_segmentation_explainer.mp4" type="video/mp4"></video></div></div>
+
+<h2 id="triage">🔬 VAE-Triage — edge-first WSI triage</h2>
+<p>A whole-slide image is ~10<sup>10</sup> pixels and ~70% of it is glass. The gate reads the pyramid lazily, removes glass on a thumbnail, scores every
+20× tile with a GMM density over 23 physical features (focus, stain, ink, folds, noise), separates tissue components, and sends only good tissue to the heavy model.</p>
+<figure><img src="assets/pipeline_pathology.png" alt="Pipeline: lazy WSI reader → thumbnail GMM tissue mask → tile grid → GMM QC → GMM tissue components → heavy model" loading="lazy"><figcaption>Pipeline: lazy WSI reader → thumbnail GMM tissue mask → tile grid → GMM QC → GMM tissue components → heavy model</figcaption></figure>
+<h3>Stage 1 — tissue detection</h3>
+<div class="grid2"><figure><img src="assets/tissue_detection_tumor_091.png" alt="Otsu misses faint tissue; the GMM fits the broad tissue cluster" loading="lazy"><figcaption>Otsu misses faint tissue; the GMM fits the broad tissue cluster</figcaption></figure><figure><img src="assets/chart_tissue.png" alt="Dice vs CAMELYON16 tissue masks, 7 slides" loading="lazy"><figcaption>Dice vs CAMELYON16 tissue masks, 7 slides</figcaption></figure></div>
+<div class="tw"><table><thead><tr><th>Method</th><th>Dice</th><th>IoU</th></tr></thead><tbody><tr><td>Fixed threshold (gray &lt; 220)</td><td>0.743</td><td>0.604</td></tr><tr><td>Otsu on grayscale</td><td>0.522</td><td>0.364</td></tr><tr><td>Otsu on HSV saturation</td><td>0.552</td><td>0.398</td></tr><tr><td>Otsu on saturation + morphology</td><td>0.534</td><td>0.381</td></tr><tr><td>K-means (k=2) on (S, OD)</td><td>0.138</td><td>0.078</td></tr><tr class="hl"><td>GMM (K=2) on (S, OD) + morphology [ours]</td><td>0.839</td><td>0.746</td></tr></tbody></table></div>
+<h3>Stage 2 — tile quality control</h3>
+<p>Test: 2290 clean tiles vs 600 glass + 1500 artefact tiles on 4 unseen slides; thresholds calibrated on unseen training slides.</p>
+<div class="tw"><table><thead><tr><th>Method</th><th>AUROC</th><th>F1</th><th>Specificity</th><th>Tumour rejected</th></tr></thead><tbody><tr><td>Laplacian variance (focus)</td><td>0.759</td><td>0.665</td><td>0.929</td><td>0.4%</td></tr><tr><td>HistoQC-style rule set</td><td>0.857</td><td>0.620</td><td>0.971</td><td>0.4%</td></tr><tr><td>Single Gaussian (Mahalanobis, K=1)</td><td>0.954</td><td>0.906</td><td>0.932</td><td>0.6%</td></tr><tr><td>GMM (K=4) same-slide calibration [pitfall]</td><td>0.942</td><td>0.828</td><td>0.687</td><td>43.1%</td></tr><tr class="hl"><td>GMM (K=6, slide-CV) LOSO calibration [ours, final]</td><td>0.939</td><td>0.897</td><td>0.928</td><td>3.5%</td></tr><tr><td>Isolation Forest</td><td>0.913</td><td>0.780</td><td>0.929</td><td>0.4%</td></tr><tr><td>Random forest (supervised)</td><td>0.960</td><td>0.895</td><td>0.865</td><td>2.0%</td></tr><tr><td>VQ-VAE recon-MSE (LOSO-calibrated threshold)</td><td>0.376</td><td>0.286</td><td>0.941</td><td>2.0%</td></tr><tr><td>ResNet18-ImageNet feats + PCA32 + GMM(K=4)</td><td>0.769</td><td>0.309</td><td>0.928</td><td>4.3%</td></tr><tr><td>MobileNetV3-Small supervised QC</td><td>0.976</td><td>0.926</td><td>0.873</td><td>5.1%</td></tr></tbody></table></div>
+<div class="grid2"><figure><img src="assets/chart_qc.png" alt="QC methods: AUROC and F1" loading="lazy"><figcaption>QC methods: AUROC and F1</figcaption></figure><figure><img src="assets/c16_artifacts.png" alt="10 artefact simulators applied to real tiles" loading="lazy"><figcaption>10 artefact simulators applied to real tiles</figcaption></figure></div>
+<figure><img src="assets/chart_qc_per_artifact.png" alt="Recall per artefact at the operating point" loading="lazy"><figcaption>Recall per artefact at the operating point</figcaption></figure>
+<h3>Why unsupervised: artefacts never seen in training</h3>
+<div class="tw"><table><thead><tr><th>Model</th><th>bubble</th><th>pen ink</th><th>fold</th><th>JPEG</th></tr></thead><tbody><tr><td>Logistic regression (supervised, 6 artefact types seen)</td><td>13%</td><td>64%</td><td>41%</td><td>46%</td></tr><tr><td>Random forest (supervised, 6 artefact types seen)</td><td>7%</td><td>64%</td><td>24%</td><td>22%</td></tr><tr class="hl"><td>GMM K=1 (no artefact ever seen)</td><td>61%</td><td>83%</td><td>91%</td><td>96%</td></tr><tr class="hl"><td>GMM K=6 (no artefact ever seen)</td><td>64%</td><td>85%</td><td>94%</td><td>99%</td></tr></tbody></table></div>
+<div class="note warn"><b>Two traps.</b> Calibrating the threshold on tiles of the <i>same</i> slides rejects 43% of tumour tiles on new slides (leave-one-slide-out: 3.5%).
+The original VQ-VAE reconstruction error scores <b>0.376 AUROC</b> for QC — blurred and empty tiles are smooth, so they are <i>easier</i> to reconstruct.</div>
+
+<h2 id="fluid">💧 GMM tissue components &amp; fluid separation</h2>
+<p>Beer–Lambert optical density → colour deconvolution into haematoxylin and eosin → pixel GMM on [H, E, OD, a*, local std]. The pale, eosin-dominant, low-OD component is
+<b>fluid</b> (proteinaceous fluid, plasma, oedema); k-means on the same features cannot isolate it. Two GMMs fitted on disjoint slides agree on
+79% of pixels; the five component fractions alone separate tumour from normal tiles with AUROC 0.93.</p>
+<figure><img src="assets/gmm_tissue_components.png" alt="GMM components vs k-means: nuclei, stroma/cytoplasm, fluid, blood, background/fat" loading="lazy"><figcaption>GMM components vs k-means: nuclei, stroma/cytoplasm, fluid, blood, background/fat</figcaption></figure>
+<figure><img src="assets/chart_tumour.png" alt="Tumour vs normal tiles: unsupervised, supervised and literature (orange)" loading="lazy"><figcaption>Tumour vs normal tiles: unsupervised, supervised and literature (orange)</figcaption></figure>
+
+<h2 id="edge">⚡ Edge deployment</h2>
+<div class="tw"><table><thead><tr><th>Component</th><th>ms / 256² tile (4-vCPU, no GPU)</th><th>Size</th></tr></thead><tbody><tr><td>23 features at 128 px</td><td>2.1</td><td>–</td></tr><tr><td>GMM scorer (NumPy)</td><td>0.009</td><td>45 KB JSON</td></tr><tr><td>VQ-VAE ONNX Runtime FP32 / INT8</td><td>22.9 / 22.7</td><td>2.9 / 0.8 MB</td></tr><tr><td>MobileNetV3-S ONNX Runtime FP32 / INT8</td><td>0.6 / 1.4</td><td>6.1 / 1.7 MB</td></tr></tbody></table></div>
+<div class="grid2"><figure><img src="assets/chart_edge_tradeoff.png" alt="Accuracy vs CPU cost" loading="lazy"><figcaption>Accuracy vs CPU cost</figcaption></figure><figure><img src="assets/chart_slide_js.png" alt="Stain/scanner shift between slides (Jensen–Shannon divergence)" loading="lazy"><figcaption>Stain/scanner shift between slides (Jensen–Shannon divergence)</figcaption></figure></div>
+<p class="note">Edge = cheap, label-free, high-recall decisions next to the scanner; expensive, label-hungry decisions on the GPU. INT8 made models 3.5–3.7× smaller but not faster on this CPU — always measure on the target device.</p>
+
+<h2 id="seg">🛰️ High-resolution segmentation (ISPRS Potsdam)</h2>
+<p>6000×6000 orthophotos → 256 px patches → D4 + photometric augmentation → U-Net with dilated bottleneck → overlap-averaged softmax stitching → 8× TTA.
+The same tiling/stitching logic is used for whole-slide segmentation.</p>
+<figure><img src="assets/pipeline_satellite.png" alt="Segmentation pipeline" loading="lazy"><figcaption>Segmentation pipeline</figcaption></figure>
+<div class="tw"><table><thead><tr><th>Method</th><th>mIoU (5 cls)</th><th>mF1</th><th>OA</th></tr></thead><tbody><tr><td>K-means (k=6, unsupervised, Hungarian-mapped)</td><td>19.8</td><td>32.5</td><td>36.1</td></tr><tr><td>GMM-Bayes (4 comps/class)</td><td>43.1</td><td>60.0</td><td>60.0</td></tr><tr><td>GMM-Bayes + posterior smoothing</td><td>48.5</td><td>65.2</td><td>64.8</td></tr><tr><td>Random Forest (RGB features)</td><td>47.1</td><td>63.9</td><td>62.2</td></tr><tr><td>Random Forest (RGB + NIR/NDVI)</td><td>50.4</td><td>66.8</td><td>65.9</td></tr><tr class="hl"><td>Residual U-Net (repo), no TTA (30 min CPU)</td><td>58.2</td><td>73.4</td><td>72.7</td></tr><tr class="hl"><td>Residual U-Net (repo), 50% overlap stitching (30 min CPU)</td><td>60.0</td><td>74.8</td><td>73.5</td></tr><tr class="hl"><td>Residual U-Net (repo), 8x TTA (30 min CPU)</td><td>61.3</td><td>75.8</td><td>74.2</td></tr><tr><td>UNetFormer R18 (literature, GPU)</td><td>86.8</td><td>92.8</td><td>91.3</td></tr><tr><td>ABCNet R18 (literature, GPU)</td><td>86.5</td><td>92.7</td><td>91.3</td></tr></tbody></table></div>
+
+<div class="grid2"><figure><img src="assets/chart_potsdam.png" alt="Potsdam mIoU: ours vs literature" loading="lazy"><figcaption>Potsdam mIoU: ours vs literature</figcaption></figure><figure><img src="assets/potsdam_classical_examples.png" alt="Test crop: RGB, ground truth, k-means, GMM-Bayes, random forest + NIR" loading="lazy"><figcaption>Test crop: RGB, ground truth, k-means, GMM-Bayes, random forest + NIR</figcaption></figure></div>
+
+<h2 id="fixes">🐛 Fixes made to the original code</h2>
+<div class="grid2"><div class="note"><b>VAE-Triage</b><ul><li>Training/triage crashed: model outputs unpacked in the wrong order</li>
+<li><code>tifffile.memmap</code> cannot open real compressed WSIs → lazy zarr reader</li><li>Documented background filtering was not implemented</li>
+<li>No GMM in the code → GMM QC, tissue mask and components added</li><li>Arbitrary MSE threshold → calibrated on unseen slides</li></ul></div>
+<div class="note"><b>Segmentation</b><ul><li>Last 112 px of every 6000-px tile never predicted (3.7% of pixels)</li><li>Nested config → <code>num_classes</code> silently 5</li>
+<li>"Residual" blocks are concatenations; stitching is a loop, not <code>scatter_nd</code></li><li>README IoUs not produced by any script → re-measured</li></ul></div></div>
+
+<h2 id="repro">🔁 Reproduce</h2>
+<p>CAMELYON16 is free on AWS Open Data; Potsdam via the Hugging Face mirror <code>aamante/potsdam</code>. Every experiment is a script in <code>benchmarks/</code>;
+raw numbers are in <code>results/*.json</code>; the report, slides, videos and this page are regenerated by <code>report/make_*.py</code>. See chapter 7 of the
+<a href="assets/Technical_Report.pdf">technical report</a>.</p>
+</main>
+<footer>© 2026 Jayinaksha · Data: CAMELYON16 (Radboud UMC, UMC Utrecht), ISPRS Potsdam</footer>
+</body></html>

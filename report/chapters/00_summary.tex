@@ -35,7 +35,7 @@ Supervised MobileNetV3 QC & AUROC 0.976, 0.6\,ms/tile (ORT) & but recall 7--64\%
 QC model size / cost & \textbf{45\,KB JSON, 1{,}799 numbers, 0.01\,ms/tile} + 2.1\,ms features (128\,px) & VQ-VAE 0.69\,M params, 22.9\,ms/tile ORT\\
 Tumour vs normal, no tumour labels & GMM novelty 0.740; VQ-VAE 0.749 & Lit.\ plain AE 0.66, L1-AE 0.21, perceptual AE 0.93\\
 Tumour via GMM tissue components (fluid, nuclei, stroma) & \textbf{0.931} (5 numbers per tile + LR) & supervised RF on 23 features 0.945\\
-Potsdam segmentation, classical (mIoU, 5 cls) & GMM-Bayes + smoothing \textbf{45.9}; RF+NIR 48.4 & k-means 15.7; lit.\ deep SOTA 86.5--87.5\\
+Potsdam segmentation (mIoU, 5 cls) & repo U-Net, 30\,min CPU: \textbf{58.2} (8$\times$TTA \textbf{61.3}); GMM-Bayes + smoothing 48.5; RF+NIR 50.4 & k-means 19.8; lit.\ deep SOTA (GPU) 86.5--87.5\\
 \bottomrule\end{tabular}\caption{Summary. Deep-learning rows and the time-boxed U-Net / YOLO runs are in the
 chapters and in the auto-generated tables.}\end{table}
 

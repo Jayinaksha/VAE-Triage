@@ -51,3 +51,10 @@ scorer = EdgeGMMScorer("results/gmm_qc_model_final.json")   # 45 KB
 x = tile_features(rgb_tile)[None]          # (1, 23)
 reject = scorer.reject(x)[0]               # bool;  scorer.score(x) = -log p(x)
 \end{lstlisting}
+
+\section{Videos and website}
+\begin{lstlisting}
+python report/make_videos.py   # explainer MP4s; uses Gemini TTS if GEMINI_API_KEY is set, else espeak-ng
+python report/make_site.py     # static site -> docs/index.html (+ docs/assets), in both repos
+# GitHub: Settings -> Pages -> Deploy from a branch -> <branch> -> /docs
+\end{lstlisting}

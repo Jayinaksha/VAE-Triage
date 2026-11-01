@@ -2,11 +2,11 @@
 
 | Method | mIoU5 | mF1-5 | OA | Imp. | Bldg | LowVeg | Tree | Car |
 |---|---|---|---|---|---|---|---|---|
-| K-means (k=6, unsupervised, Hungarian-mapped) | 15.7 | 25.9 | 31.9 | 25.1 | 16.6 | 25.8 | 0.6 | 10.4 |
-| GMM-Bayes (4 comps/class) | 40.5 | 57.5 | 56.6 | 47.5 | 44.0 | 43.4 | 34.2 | 33.6 |
-| GMM-Bayes + posterior smoothing | 45.9 | 62.7 | 61.7 | 51.2 | 48.3 | 49.6 | 40.9 | 39.3 |
-| Random Forest (RGB features) | 45.7 | 62.5 | 60.7 | 54.0 | 47.3 | 46.8 | 37.7 | 42.6 |
-| Random Forest (RGB + NIR/NDVI) | 48.4 | 64.9 | 64.0 | 60.7 | 50.9 | 48.6 | 41.0 | 40.8 |
+| K-means (k=6, unsupervised, Hungarian-mapped) | 19.8 | 32.5 | 36.1 | 24.8 | 10.9 | 25.6 | 25.0 | 12.6 |
+| GMM-Bayes (4 comps/class) | 43.1 | 60.0 | 60.0 | 51.6 | 41.7 | 46.6 | 38.7 | 36.8 |
+| GMM-Bayes + posterior smoothing | 48.5 | 65.2 | 64.8 | 55.1 | 45.2 | 52.1 | 45.7 | 44.5 |
+| Random Forest (RGB features) | 47.1 | 63.9 | 62.2 | 54.5 | 46.6 | 46.6 | 40.9 | 46.7 |
+| Random Forest (RGB + NIR/NDVI) | 50.4 | 66.8 | 65.9 | 62.2 | 51.9 | 48.1 | 44.0 | 45.9 |
 | Lit: ERFNet (UNetFormer T9) | 76.2 | -- | -- | -- | -- | -- | -- | -- |
 | Lit: BiSeNet R18 | 81.7 | -- | -- | -- | -- | -- | -- | -- |
 | Lit: DANet R18 | 80.3 | -- | -- | -- | -- | -- | -- | -- |

@@ -41,6 +41,17 @@ Processing every tile of a WSI is expensive, and most of a slide is **empty glas
 📑 **Full technical report:** [`report/Technical_Report.pdf`](report/Technical_Report.pdf) (37 pages) ·
 [`report/REPORT.md`](report/REPORT.md) · 🎤 **Slides:** [`report/Interview_Slides.pptx`](report/Interview_Slides.pptx) ([PDF](report/Interview_Slides.pdf))
 
+
+## 🎬 Videos & website
+
+🌐 **Project website (GitHub Pages):** https://jayinaksha.github.io/VAE-Triage/ — both explainer videos, all charts, results and downloads.
+
+| VAE-Triage explainer | High-resolution segmentation explainer |
+|---|---|
+| [![VAE-Triage video](docs/assets/poster_vae.jpg)](https://jayinaksha.github.io/VAE-Triage/#videos) | [![Segmentation video](docs/assets/poster_sat.jpg)](https://jayinaksha.github.io/VAE-Triage/#videos) |
+| [▶ Watch on the site](https://jayinaksha.github.io/VAE-Triage/#videos) · [download MP4](docs/assets/VAE-Triage_explainer.mp4) | [▶ Watch on the site](https://jayinaksha.github.io/VAE-Triage/#videos) · [download MP4](docs/assets/Satellite_segmentation_explainer.mp4) |
+
+
 ---
 
 ## 🏛️ Pipeline
