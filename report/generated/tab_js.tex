@@ -1,0 +1,16 @@
+\begin{table}[H]\centering\small
+\caption{Which features move most under each artefact (Jensen-Shannon divergence, base 2, in [0,1]).}\label{tab:js}
+\begin{adjustbox}{max width=\linewidth}\begin{tabular}{lp{11cm}}\toprule
+\textbf{Artefact} & \textbf{Top-3 features by JS divergence (clean vs artefact)} \\\midrule
+background & colorfulness (0.95), tissue\_frac (0.94), sat\_std (0.93) \\
+bubble & hf\_ratio (0.35), h\_std (0.31), lap\_norm (0.29) \\
+dark\_exposure & val\_mean (0.94), tissue\_frac (0.80), h\_mean (0.56) \\
+gaussian\_blur & lap\_norm (0.94), log\_lap\_var (0.91), log\_noise (0.90) \\
+jpeg & dark\_frac (0.31), log\_noise (0.27), edge\_density (0.23) \\
+motion\_blur & log\_lap\_var (0.82), lap\_norm (0.79), hf\_ratio (0.66) \\
+partial\_blur & log\_noise (0.37), edge\_density (0.36), log\_lap\_var (0.32) \\
+pen\_mark & non\_he\_hue\_frac (0.31), h\_mean (0.22), h\_std (0.22) \\
+sensor\_noise & non\_he\_hue\_frac (0.94), log\_noise (0.76), colorfulness (0.43) \\
+tissue\_fold & dark\_frac (0.46), od\_std (0.36), val\_std (0.35) \\
+washout & e\_std (0.78), sat\_std (0.76), od\_std (0.69) \\
+\bottomrule\end{tabular}\end{adjustbox}\end{table}

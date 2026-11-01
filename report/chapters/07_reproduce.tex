@@ -1,0 +1,53 @@
+\chapter{Reproducing everything}
+Hardware used: 4 vCPU, 15\,GB RAM, no GPU. Total data: 4.5\,GB slides + 2\,GB Potsdam. Python 3.13.
+
+\section{Environment}
+\begin{lstlisting}
+python -m venv .venv && source .venv/bin/activate
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install opencv-python-headless scikit-learn scikit-image tifffile imagecodecs zarr \
+            matplotlib onnx onnxruntime onnxscript tensorflow-cpu seaborn ultralytics pandas
+\end{lstlisting}
+
+\section{Data}
+\begin{lstlisting}
+# CAMELYON16 (AWS Open Data, no login): slides, tumour masks, tissue masks
+B=https://camelyon-dataset.s3.amazonaws.com/CAMELYON16
+for s in tumor_091 tumor_084 tumor_075 tumor_082 normal_108 normal_150 tumor_079; do
+  curl -o data/camelyon16/images/$s.tif        $B/images/$s.tif
+  curl -o data/camelyon16/masks/${s}_mask.tif   $B/masks/${s}_mask.tif
+  curl -o data/camelyon16/tissue/${s}_tissue.tif $B/background_tissue/${s}_tissue.tif
+done
+# ISPRS Potsdam (Hugging Face mirror aamante/potsdam): see Satellite repo benchmarks/potsdam.py
+\end{lstlisting}
+
+\section{VAE-Triage experiments}
+\begin{lstlisting}
+cd VAE-Triage
+python benchmarks/build_tiles.py              # tiles + census  (~2 min)
+python -m benchmarks.qc_sets                  # artefact sets   (~30 s)
+python -m benchmarks.exp_tissue_detection     # Stage 0         (~2 min)
+python -m benchmarks.exp_classical            # Stage 1 + tumour + statistics (~1.5 min)
+python -m benchmarks.exp_gmm_components       # Stage 2 fluid/components (~5 min)
+python -m benchmarks.exp_ablations            # 128px features, unseen artefacts (~3 min)
+python -m benchmarks.exp_deep                 # VQ-VAE, MobileNetV3, ResNet+GMM, ONNX (~2 h CPU)
+python report/make_assets.py && python report/make_diagrams.py
+cd report && pdflatex main.tex && pdflatex main.tex
+\end{lstlisting}
+
+\section{Satellite experiments}
+\begin{lstlisting}
+cd Satellite_based_tile_segmentation
+python -m benchmarks.exp_classical_seg        # k-means, GMM-Bayes, RF (~15 min)
+python -m benchmarks.exp_unet --minutes 40 --filters 16   # repo U-Net, CPU time-boxed
+python -m benchmarks.exp_yolo --minutes 25    # YOLOv8n-seg cars
+\end{lstlisting}
+
+\section{Using the edge scorer}
+\begin{lstlisting}[language=Python]
+from triage.features import tile_features
+from triage.gmm_triage import EdgeGMMScorer
+scorer = EdgeGMMScorer("results/gmm_qc_model_final.json")   # 45 KB
+x = tile_features(rgb_tile)[None]          # (1, 23)
+reject = scorer.reject(x)[0]               # bool;  scorer.score(x) = -log p(x)
+\end{lstlisting}

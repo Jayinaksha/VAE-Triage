@@ -67,16 +67,23 @@ class GMMTissueComponents:
 
     @staticmethod
     def _name_components(m):
-        """Rule-based naming of the K Gaussians from their *mean* descriptor.
-        columns: H, E, OD_sum, a*, local_std"""
+        """Name the K Gaussians from their mean descriptor [H, E, OD, a*, std]
+        (OD = summed log10 optical density, so glass ~0.1, dense nuclei ~1.5+):
+          OD < 0.20                          -> background / fat vacuole
+          H / (H + E) > 0.6                  -> nuclei (haematoxylin-dominant)
+          a* > 0.45 and E > H                -> red blood cells
+          0.20 <= OD < 0.45 and E >= H       -> fluid: pale eosinophilic
+                                                (proteinaceous fluid, plasma,
+                                                 oedema, lymph in sinuses)
+          otherwise                          -> stroma / cytoplasm
+        """
         H, E, OD, A, S = m.T
-        names = np.full(len(m), 2)                            # default stroma/cytoplasm
-        names[OD < 0.12] = 0                                  # glass / fat
-        names[(A > 0.30) & (OD >= 0.12)] = 4                  # strongly red -> RBC
-        nuc = (H - E > np.percentile(H - E, 75)) & (OD > 0.35)
-        names[nuc & (names == 2)] = 3                         # haematoxylin-dominant -> nuclei
-        fluid = (names == 2) & (OD >= 0.12) & (OD < 0.45) & (S < np.median(S)) & (H < E + 0.05)
-        names[fluid] = 1                                      # pale, smooth, eosinophilic -> fluid
+        names = np.full(len(m), 2)
+        ratio = H / np.maximum(H + E, 1e-6)
+        names[(OD >= 0.20) & (OD < 0.45) & (E >= H)] = 1
+        names[(A > 0.45) & (E > H) & (OD >= 0.20)] = 4
+        names[(ratio > 0.6) & (OD >= 0.45)] = 3
+        names[OD < 0.20] = 0
         return names
 
     def predict(self, rgb: np.ndarray, return_proba: bool = False):

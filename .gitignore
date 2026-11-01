@@ -4,3 +4,8 @@ checkpoints/
 *.onnx
 *.pt
 *.tif
+report/main.pdf
+report/*.aux
+report/*.log
+report/*.toc
+report/*.out

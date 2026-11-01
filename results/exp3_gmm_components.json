@@ -1,0 +1,49 @@
+{
+  "component_names": [
+    "stroma/cytoplasm",
+    "background/fat",
+    "nuclei",
+    "stroma/cytoplasm",
+    "nuclei",
+    "fluid",
+    "background/fat"
+  ],
+  "fit_seconds": 39.986257167000076,
+  "ms_per_tile_256": 85.0757626938864,
+  "stability_ARI_disjoint_slides": 0.6773703937765085,
+  "stability_pixel_agreement": 0.7894617716471354,
+  "gmm_vs_kmeans_ARI": 0.6437843065256532,
+  "kmeans_component_names": [
+    "stroma/cytoplasm",
+    "background/fat",
+    "nuclei",
+    "stroma/cytoplasm",
+    "nuclei",
+    "stroma/cytoplasm",
+    "stroma/cytoplasm"
+  ],
+  "tumour_auc_single_fraction": {
+    "background/fat": 0.2237375283446712,
+    "fluid": 0.602845238095238,
+    "stroma/cytoplasm": 0.9280436507936508,
+    "nuclei": 0.7034081632653061,
+    "blood (RBC)": 0.5
+  },
+  "tumour_auc_fraction_vector_logreg": 0.9309047619047618,
+  "mean_fractions": {
+    "normal": {
+      "background/fat": 0.5246,
+      "fluid": 0.1069,
+      "stroma/cytoplasm": 0.1775,
+      "nuclei": 0.191,
+      "blood (RBC)": 0.0
+    },
+    "tumor": {
+      "background/fat": 0.0716,
+      "fluid": 0.1503,
+      "stroma/cytoplasm": 0.5009,
+      "nuclei": 0.2771,
+      "blood (RBC)": 0.0
+    }
+  }
+}

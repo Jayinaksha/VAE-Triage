@@ -1,0 +1,86 @@
+{
+  "normal_108": {
+    "width0": 45056,
+    "height0": 35840,
+    "grid_tiles": 6160,
+    "tissue_tiles": 4279,
+    "tumor_tiles": 0,
+    "background_tiles": 1881,
+    "pool_normal": 3917,
+    "pool_tumor": 0,
+    "pool_background": 1824,
+    "pool_border": 309
+  },
+  "normal_150": {
+    "width0": 65536,
+    "height0": 60928,
+    "grid_tiles": 15232,
+    "tissue_tiles": 5215,
+    "tumor_tiles": 0,
+    "background_tiles": 10017,
+    "pool_normal": 4926,
+    "pool_tumor": 0,
+    "pool_background": 9961,
+    "pool_border": 269
+  },
+  "tumor_075": {
+    "width0": 90112,
+    "height0": 78848,
+    "grid_tiles": 27104,
+    "tissue_tiles": 11967,
+    "tumor_tiles": 312,
+    "background_tiles": 15137,
+    "pool_normal": 10201,
+    "pool_tumor": 144,
+    "pool_background": 14900,
+    "pool_border": 1253
+  },
+  "tumor_079": {
+    "width0": 180224,
+    "height0": 107520,
+    "grid_tiles": 73920,
+    "tissue_tiles": 16389,
+    "tumor_tiles": 97,
+    "background_tiles": 57531,
+    "pool_normal": 14487,
+    "pool_tumor": 67,
+    "pool_background": 57167,
+    "pool_border": 1626
+  },
+  "tumor_082": {
+    "width0": 200704,
+    "height0": 60928,
+    "grid_tiles": 46648,
+    "tissue_tiles": 10088,
+    "tumor_tiles": 1038,
+    "background_tiles": 36560,
+    "pool_normal": 8282,
+    "pool_tumor": 894,
+    "pool_background": 36446,
+    "pool_border": 685
+  },
+  "tumor_084": {
+    "width0": 65536,
+    "height0": 86016,
+    "grid_tiles": 21504,
+    "tissue_tiles": 8409,
+    "tumor_tiles": 186,
+    "background_tiles": 13095,
+    "pool_normal": 7731,
+    "pool_tumor": 111,
+    "pool_background": 13000,
+    "pool_border": 403
+  },
+  "tumor_091": {
+    "width0": 61440,
+    "height0": 53760,
+    "grid_tiles": 12600,
+    "tissue_tiles": 5419,
+    "tumor_tiles": 242,
+    "background_tiles": 7181,
+    "pool_normal": 4775,
+    "pool_tumor": 168,
+    "pool_background": 7092,
+    "pool_border": 362
+  }
+}

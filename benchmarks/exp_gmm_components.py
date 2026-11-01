@@ -38,11 +38,12 @@ def main():
     print("component naming:", names)
 
     # (b) stability: GMMs fitted on disjoint slides agree?
-    a = GMMTissueComponents(k=7, seed=1).fit(tr[trs == "normal_108"][:60])
-    b = GMMTissueComponents(k=7, seed=2).fit(tr[trs == "tumor_082"][:60])
+    a = GMMTissueComponents(k=7, seed=1).fit(tr[trs == "normal_108"][:60], n_pixels=80_000)
+    b = GMMTissueComponents(k=7, seed=2).fit(tr[trs == "tumor_082"][:60], n_pixels=80_000)
     te = d["te_clean"]
     probe = te[rng.choice(len(te), 30, replace=False)]
     ari = [adjusted_rand_score(a.predict(x).ravel(), b.predict(x).ravel()) for x in probe]
+    agree = [float((a.predict(x) == b.predict(x)).mean()) for x in probe]
 
     # (c) k-means on the same descriptor, mapped with the same rules
     Xs = np.concatenate([pixel_descriptor(x)[::40] for x in fit_tiles])
@@ -51,6 +52,7 @@ def main():
     km_names = GMMTissueComponents._name_components(km.cluster_centers_ * sd + mu)
     km_ari = [adjusted_rand_score(gc.predict(x).ravel(),
                                   km_names[km.predict((pixel_descriptor(x) - mu) / sd)]) for x in probe]
+    km_a = GMMTissueComponents  # noqa: F841
 
     # (d) component fractions -> tumour vs normal (test slides)
     t = time.perf_counter()
@@ -65,7 +67,7 @@ def main():
     mean_frac = {lab: dict(zip(COMPONENTS, Fte[d["te_clean_lab"] == lab].mean(0).round(4).tolist()))
                  for lab in ["normal", "tumor"]}
     out = dict(component_names=names, fit_seconds=fit_s, ms_per_tile_256=ms_tile,
-               stability_ARI_disjoint_slides=float(np.mean(ari)), gmm_vs_kmeans_ARI=float(np.mean(km_ari)),
+               stability_ARI_disjoint_slides=float(np.mean(ari)), stability_pixel_agreement=float(np.mean(agree)), gmm_vs_kmeans_ARI=float(np.mean(km_ari)),
                kmeans_component_names=[COMPONENTS[c] for c in km_names],
                tumour_auc_single_fraction=per_comp_auc, tumour_auc_fraction_vector_logreg=auc_lr,
                mean_fractions=mean_frac)
